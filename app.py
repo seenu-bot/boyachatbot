@@ -330,12 +330,18 @@ def schedule_appointment():
         appointment_id = f"APT-{timestamp}-{random_num}"
         
         # Create appointment object
+        user_info = {
+            'name': session.get('name', ''),
+            'email': session.get('email', ''),
+            'phone': session.get('phone', '')
+        }
         appointment = {
             'id': appointment_id,
             'title': title,
             'time': appointment_time.isoformat(),
             'notes': notes,
-            'status': 'pending'
+            'status': 'scheduled',
+            'user': user_info
         }
         
         # Add to appointments list
@@ -345,10 +351,22 @@ def schedule_appointment():
         csv_file = 'appointments.csv'
         file_exists = os.path.isfile(csv_file)
         with open(csv_file, 'a', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['id', 'title', 'time', 'notes', 'status'])
+            writer = csv.DictWriter(
+                f,
+                fieldnames=['id', 'title', 'time', 'notes', 'status', 'user_name', 'user_email', 'user_phone']
+            )
             if not file_exists:
                 writer.writeheader()
-            writer.writerow(appointment)
+            writer.writerow({
+                'id': appointment['id'],
+                'title': appointment['title'],
+                'time': appointment['time'],
+                'notes': appointment['notes'],
+                'status': appointment['status'],
+                'user_name': user_info.get('name', ''),
+                'user_email': user_info.get('email', ''),
+                'user_phone': user_info.get('phone', '')
+            })
         
         # Create iCalendar event
         cal = Calendar()
@@ -412,45 +430,57 @@ def cancel_appointment():
         if not appointment_id:
             return jsonify({'error': 'Appointment ID is required'}), 400
 
-        # Read all appointments
+        # Read all appointments from CSV (best-effort)
         appointments_list = []
         try:
             with open('appointments.csv', 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
                 appointments_list = list(reader)
         except FileNotFoundError:
-            return jsonify({'error': 'No appointments found'}), 404
+            appointments_list = []
 
-        # Find the appointment
-        appointment_found = False
-        for appointment in appointments_list:
-            if appointment['id'] == appointment_id:
-                appointment_found = True
-                appointment['status'] = 'cancelled'
+        appointment_row = None
+        for row in appointments_list:
+            if row.get('id') == appointment_id:
+                row['status'] = 'cancelled'
+                appointment_row = row
                 break
 
-        if not appointment_found:
-            return jsonify({'error': 'Appointment not found'}), 404
+        # Persist back CSV file if we loaded any
+        if appointments_list:
+            with open('appointments.csv', 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(
+                    f,
+                    fieldnames=['id', 'title', 'time', 'notes', 'status', 'user_name', 'user_email', 'user_phone']
+                )
+                writer.writeheader()
+                writer.writerows(appointments_list)
 
-        # Write back all appointments
-        with open('appointments.csv', 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['id', 'title', 'time', 'notes', 'status'])
-            writer.writeheader()
-            writer.writerows(appointments_list)
-
-        # Update Firebase
+        # Update Firebase and fetch latest details
+        fb_details = None
         if rtdb_available:
             try:
-                safe_firebase_operation(
-                    lambda: fb_db.reference('appointments').child(appointment_id).update({'status': 'cancelled'})
+                # Read current data
+                fb_details = safe_firebase_operation(
+                    lambda: fb_db.reference('appointments').child(appointment_id).get(),
+                    None
                 )
-                logger.info(f"Appointment cancelled in Firebase: {appointment_id}")
+                if fb_details is not None:
+                    fb_details['status'] = 'cancelled'
+                    safe_firebase_operation(
+                        lambda: fb_db.reference('appointments').child(appointment_id).update({'status': 'cancelled'})
+                    )
+                    logger.info(f"Appointment cancelled in Firebase: {appointment_id}")
             except Exception as e:
                 logger.warning(f"Failed to update appointment in RTDB: {e}")
 
+        # Prefer Firebase details, else CSV row, else minimal
+        result_appt = fb_details or appointment_row or {'id': appointment_id, 'status': 'cancelled'}
+
         return jsonify({
             'message': 'Appointment cancelled successfully',
-            'appointment_id': appointment_id
+            'appointment_id': appointment_id,
+            'appointment': result_appt
         })
 
     except Exception as e:
@@ -738,7 +768,12 @@ def dashboard():
                     'title': d.get('title', ''),
                     'time': time_iso,
                     'notes': d.get('notes', ''),
-                    'status': status
+                    'status': status,
+                    'user': d.get('user', {
+                        'name': d.get('user_name', ''),
+                        'email': d.get('user_email', ''),
+                        'phone': d.get('user_phone', '')
+                    })
                 })
                 appt_status_counts[status] += 1
                 try:
@@ -792,6 +827,57 @@ def dashboard():
             # Convert user sessions to list
             users = list(user_sessions.values())
 
+            # Build a unified unique-user set from sessions and from 'users' node (chatbot form)
+            unique_keys = set()
+            def _key_from(u):
+                for k in [u.get('email'), u.get('phone'), u.get('session_id')]:
+                    if k:
+                        return k
+                return None
+
+            for u in users:
+                k = _key_from(u)
+                if k:
+                    unique_keys.add(k)
+
+            # Pull users captured via chatbot form and merge
+            try:
+                form_users_snapshot = safe_firebase_operation(
+                    lambda: fb_db.reference('users').get(),
+                    {}
+                )
+                if isinstance(form_users_snapshot, dict) and form_users_snapshot:
+                    for key2, u2 in form_users_snapshot.items():
+                        k2 = None
+                        for k in [u2.get('email'), u2.get('phone')]:
+                            if k:
+                                k2 = k
+                                break
+                        if k2:
+                            unique_keys.add(k2)
+                else:
+                    # Fallback to local users_data.json to keep metrics in sync with table
+                    try:
+                        if os.path.exists('users_data.json'):
+                            with open('users_data.json', 'r', encoding='utf-8') as f:
+                                for line in f:
+                                    if not line.strip():
+                                        continue
+                                    u2 = json.loads(line.strip())
+                                    k2 = None
+                                    for k in [u2.get('email'), u2.get('phone')]:
+                                        if k:
+                                            k2 = k
+                                            break
+                                    if k2:
+                                        unique_keys.add(k2)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+            metrics['totalUsers'] = len(unique_keys)
+
         try:
             leads.sort(key=lambda x: x.get('created_at') or '', reverse=True)
         except Exception:
@@ -809,7 +895,8 @@ def dashboard():
         metrics['totalLeads'] = len(leads)
         metrics['totalAppointments'] = len(appointments_view)
         metrics['totalConversations'] = len(conversations)
-        metrics['totalUsers'] = len(users)
+        if metrics.get('totalUsers', 0) == 0:
+            metrics['totalUsers'] = len(users)
         try:
             metrics['leadsToday'] = leads_day_counts.get(datetime.utcnow().strftime('%Y-%m-%d'), 0)
         except Exception:
@@ -885,13 +972,22 @@ def store_user_data():
             'source': 'chatbot_form'
         }
         
-        # Store in Firebase if available
+        # Store in Firebase if available and increment a simple counter node for total users
         if rtdb_available:
             try:
                 # Store in users node
                 users_ref = fb_db.reference('users')
                 users_ref.push(user_data)
                 logger.info(f"User data stored in Firebase: {user_data['email']}")
+                # Increment total_users counter (atomic transaction)
+                def _incr_counter(current):
+                    if current is None:
+                        return 1
+                    try:
+                        return int(current) + 1
+                    except Exception:
+                        return 1
+                fb_db.reference('metrics/total_users').transaction(_incr_counter)
             except Exception as e:
                 logger.error(f"Failed to store user data in Firebase: {e}")
         

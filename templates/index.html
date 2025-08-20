@@ -224,12 +224,12 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 90vw;
-            max-width: 400px;
-            height: 75vh;
-            max-height: 600px;
+            width: 88vw;
+            max-width: 360px;
+            height: 70vh;
+            max-height: 560px;
             background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
-            border-radius: 20px;
+            border-radius: 18px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(102, 126, 234, 0.2);
             z-index: 1000;
             display: none;
@@ -241,12 +241,12 @@
         /* Mobile-first responsive design */
         @media (max-width: 640px) {
             #chatbot-window {
-                width: 95vw;
-                height: 80vh;
+                width: 92vw;
+                height: 75vh;
                 bottom: 10px;
                 right: 10px;
                 left: 10px;
-                border-radius: 18px;
+                border-radius: 16px;
             }
             
             .scheduling-form {
@@ -272,7 +272,7 @@
                 width: 95vw;
                 max-width: none;
                 margin: 10px;
-                padding: 20px;
+            padding: 20px;
             }
             
             .form-input {
@@ -304,17 +304,14 @@
         
         @media (min-width: 641px) and (max-width: 1024px) {
             #chatbot-window {
-                width: 85vw;
-                max-width: 450px;
-                height: 70vh;
+                width: 80vw;
+                max-width: 420px;
+                height: 65vh;
             }
         }
         
         @media (min-width: 1025px) {
-            #chatbot-window {
-                width: 400px;
-                height: 600px;
-            }
+            #chatbot-window { width: 360px; height: 560px; }
         }
         
         /* Touch-friendly improvements */
@@ -352,11 +349,11 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 90vw;
-            max-width: 480px;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            border-radius: 20px;
-            padding: 28px;
+            width: 86vw;
+            max-width: 360px;
+            background: linear-gradient(135deg, hsl(240, 28%, 14%) 0%, #16213e 100%);
+            border-radius: 18px;
+            padding: 22px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
             z-index: 1000;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -375,37 +372,10 @@
             }
         }
         
-        .form-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 0.8rem;
-            text-align: center;
-            background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .form-subtitle {
-            color: rgba(255, 255, 255, 0.7);
-            text-align: center;
-            margin-bottom: 1.8rem;
-            font-size: 1rem;
-        }
-        
-        .form-input {
-            width: 100%;
-            padding: 14px 18px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            font-size: 15px;
-            margin-bottom: 1.3rem;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-            backdrop-filter: blur(10px);
-        }
+        .form-title { font-size: 1.25rem; }
+        .form-subtitle { font-size: 0.95rem; margin-bottom: 1.2rem; }
+        .form-input { padding: 12px 14px; font-size: 14px; border-radius: 12px; margin-bottom: 12px; }
+        .form-button { padding: 12px 14px; font-size: 14px; border-radius: 12px; }
         
         .form-input::placeholder {
             color: rgba(255, 255, 255, 0.5);
@@ -615,6 +585,139 @@
         
         /* Keep input row pinned to bottom inside chat window */
         #chatbot-window .input-row { position: sticky; bottom: 0; }
+
+        /* General message font size a bit smaller */
+        .message { font-size: 14px; }
+
+        /* Make quick buttons a touch smaller */
+        .quick-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 18px;
+            padding: 6px 12px;
+            margin: 0; /* remove extra margins; container gap will handle spacing */
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Smaller header title/subtitle */
+        #chatbot-window .header-title { font-size: 16px; }
+        #chatbot-window .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.75); }
+
+        /* Slightly smaller send button and input text */
+        #user-input { font-size: 14px; }
+        .send-button { padding: 12px 18px; font-size: 14px; }
+        .voice-btn { padding: 10px 12px; }
+
+        /* Reduce default chat window size a bit */
+        #chatbot-window {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 88vw;
+            max-width: 360px;
+            height: 70vh;
+            max-height: 560px;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(102, 126, 234, 0.2);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+        }
+
+        @media (max-width: 640px) {
+            #chatbot-window {
+                width: 92vw;
+                height: 75vh;
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                border-radius: 16px;
+            }
+            .message { font-size: 13px; padding: 10px 14px; }
+            .quick-btn { font-size: 12px; padding: 6px 12px; }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+            #chatbot-window {
+                width: 80vw;
+                max-width: 420px;
+                height: 65vh;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            #chatbot-window { width: 360px; height: 560px; }
+        }
+
+        /* Quick options container spacing */
+        #quick-btns { gap: 6px !important; row-gap: 6px !important; }
+
+        .quick-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 18px;
+            padding: 6px 12px;
+            margin: 0; /* remove extra margins; container gap will handle spacing */
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Compact modal sizes to match reduced chatbot */
+        .scheduling-form {
+            width: 84vw;
+            max-width: 320px;
+            max-height: 70vh;
+            padding: 14px 16px;
+            border-radius: 14px;
+            z-index: 1100;
+        }
+        @media (min-width: 641px) {
+            .scheduling-form { width: 72vw; max-width: 340px; max-height: 68vh; }
+        }
+        @media (min-width: 1025px) {
+            .scheduling-form { width: 340px; max-height: 520px; }
+        }
+        .scheduling-form .form-input { padding: 10px 12px; font-size: 14px; border-radius: 12px; margin-bottom: 10px; }
+        .scheduling-form .form-button { padding: 10px 12px; font-size: 14px; border-radius: 12px; }
+        .scheduling-form h3 { font-size: 16px; }
+        #cancel-form .form-input, #lead-form .form-input { padding: 10px 12px; font-size: 14px; border-radius: 12px; margin-bottom: 10px; }
+        #cancel-form .form-button, #lead-form .form-button { padding: 10px 12px; font-size: 14px; border-radius: 12px; }
+        /* Improve pre-chat form visibility */
+        .form-overlay { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); }
+        .form-container {
+            background: linear-gradient(135deg, #121a38 0%, #1b2550 100%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(102, 126, 234, 0.35) !important;
+            padding: 24px !important;
+        }
+        .form-title { color: #ffffff !important; font-size: 1.4rem !important; }
+        .form-subtitle { color: rgba(255, 255, 255, 0.9) !important; font-size: 1rem !important; }
+        .form-input {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            border: 1px solid #d1d5db !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        }
+        .form-input::placeholder { color: #64748b !important; }
+        .form-input:focus {
+            border-color: #8b5cf6 !important;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
+            background: #ffffff !important;
+        }
+        .form-button { box-shadow: 0 10px 24px rgba(102, 126, 234, 0.35) !important; }
+        .form-button.secondary { color: #e2e8f0; background: rgba(255,255,255,0.08) !important; border-color: rgba(255,255,255,0.2) !important; }
     </style>
 </head>
 <body class="min-h-screen relative">
@@ -755,8 +858,8 @@
         </div>
     </div>
 
-    <!-- Chatbot Window (visible by default for debugging/visibility) -->
-    <div id="chatbot-window" style="display:flex;">
+    <!-- Chatbot Window (hidden by default) -->
+    <div id="chatbot-window" class="hidden">
         <div class="flex items-center justify-between mb-4 p-4 border-b border-white/10">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center">
@@ -801,7 +904,7 @@
             </div>
         </div>
         
-        <div class="mb-4 flex flex-wrap gap-2 px-4" id="quick-btns">
+        <div class="mb-3 flex flex-wrap gap-1 px-4" id="quick-btns">
             <button class="quick-btn" id="btn-whatwedo" onclick="sendQuick('What we do', 'btn-whatwedo')">What we do</button>
             <button class="quick-btn" id="btn-services" onclick="sendQuick('Services', 'btn-services')">Services</button>
             <button class="quick-btn" id="btn-aboutus" onclick="sendQuick('About Us', 'btn-aboutus')">About Us</button>

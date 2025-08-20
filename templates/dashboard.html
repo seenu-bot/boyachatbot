@@ -407,7 +407,7 @@
                             <div class="metric-label">Conversations</div>
                     </div>
                         <div class="metric-card">
-                            <div class="metric-value">{{ users|length if users else 0 }}</div>
+                            <div class="metric-value">{{ metrics.totalUsers if metrics and metrics.totalUsers is not none else (users|length if users else 0) }}</div>
                             <div class="metric-label">Total Users</div>
                     </div>
                 </div>
@@ -496,7 +496,8 @@
                                         <th>Title</th>
                                         <th>Time</th>
                                         <th>Notes</th>
-                                        <th>ID</th>
+                                        <th>Appointment ID</th>
+                                        <th>User</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
@@ -507,13 +508,22 @@
                                             <td>{{ appointment.title }}</td>
                                             <td>{{ appointment.time[:16] if appointment.time else 'N/A' }}</td>
                                             <td>{{ appointment.notes[:50] + '...' if appointment.notes and appointment.notes|length > 50 else (appointment.notes or 'N/A') }}</td>
-                                            <td>{{ appointment.appointment_id }}</td>
-                                            <td><span class="status-success">Scheduled</span></td>
-                                    </tr>
-                                    {% endfor %}
+                                            <td>{{ appointment.id }}</td>
+                                            <td>{{ appointment.user.name if appointment.user and appointment.user.name else 'N/A' }}<br><span class="text-xs text-gray-400">{{ appointment.user.email if appointment.user and appointment.user.email else '' }}</span></td>
+                                            <td>
+                                                {% if appointment.status == 'cancelled' %}
+                                                    <span class="status-error">Cancelled</span>
+                                                {% elif appointment.status == 'scheduled' %}
+                                                    <span class="status-success">Scheduled</span>
+                                                {% else %}
+                                                    <span class="status-warning">{{ appointment.status|capitalize }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
                                     {% else %}
                                         <tr>
-                                            <td colspan="5" class="text-center text-gray-400 py-6">No appointments scheduled yet</td>
+                                            <td colspan="6" class="text-center text-gray-400 py-6">No appointments scheduled yet</td>
                                         </tr>
                                     {% endif %}
                                 </tbody>
@@ -533,6 +543,13 @@
                                 </svg>
                                 Export
                             </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                            <div class="chart-container mx-auto" style="height:200px; max-width:420px;">
+                                <h3 class="text-sm font-semibold text-white mb-2">Intent Distribution</h3>
+                                <canvas id="intentChart"></canvas>
+                            </div>
                         </div>
                         
                         <div class="table">
@@ -555,8 +572,8 @@
                                             <td>{{ conversation.bot_response[:50] + '...' if conversation.bot_response and conversation.bot_response|length > 50 else (conversation.bot_response or 'N/A') }}</td>
                                             <td>{{ conversation.timestamp[:16] if conversation.timestamp else 'N/A' }}</td>
                                             <td><span class="status-success">Completed</span></td>
-                                    </tr>
-                                    {% endfor %}
+                                        </tr>
+                                        {% endfor %}
                                     {% else %}
                                         <tr>
                                             <td colspan="5" class="text-center text-gray-400 py-6">No conversations recorded yet</td>
@@ -907,6 +924,51 @@
                 });
             }
         });
+
+            // Intent Distribution (simple keyword-based)
+            const intentCtx = document.getElementById('intentChart');
+            if (intentCtx) {
+                let intentCounts = { general: 0, services: 0, schedule: 0, cancel: 0, contact: 0 };
+                try {
+                    const convs = {{ (conversations | tojson) if conversations else '[]' }};
+                    if (Array.isArray(convs)) {
+                        convs.forEach(c => {
+                            const msg = (c && c.user_message ? String(c.user_message).toLowerCase() : '');
+                            if (/(service|pricing|offer|package)/.test(msg)) intentCounts.services++;
+                            else if (/(schedule|book|meeting|appointment)/.test(msg)) intentCounts.schedule++;
+                            else if (/(cancel|reschedule)/.test(msg)) intentCounts.cancel++;
+                            else if (/(contact|call|reach|email)/.test(msg)) intentCounts.contact++;
+                            else intentCounts.general++;
+                        });
+                    }
+                } catch (e) {
+                    // leave defaults
+                }
+
+                new Chart(intentCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['General', 'Services', 'Schedule', 'Cancel', 'Contact'],
+                        datasets: [{
+                            data: [intentCounts.general, intentCounts.services, intentCounts.schedule, intentCounts.cancel, intentCounts.contact],
+                            backgroundColor: [
+                                'rgba(148, 163, 184, 0.8)',
+                                'rgba(99, 102, 241, 0.85)',
+                                'rgba(16, 185, 129, 0.85)',
+                                'rgba(239, 68, 68, 0.85)',
+                                'rgba(244, 114, 182, 0.85)'
+                            ],
+                            borderWidth: 0,
+                            cutout: '70%'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { color: 'white', boxWidth: 10, font: { size: 10 } } } }
+                    }
+                });
+            }
     </script>
 </body>
 </html>
