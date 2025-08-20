@@ -69,6 +69,9 @@ try:
                             rtdb_url = f"https://{project_id_guess}-default-rtdb.firebaseio.com"
             except Exception:
                 pass
+        # Hard-default to jamm-af884 if nothing inferred
+        if not rtdb_url:
+            rtdb_url = "https://jamm-af884-default-rtdb.firebaseio.com"
 
         try:
             firebase_admin.get_app()
@@ -88,6 +91,12 @@ try:
                 firebase_admin.initialize_app(cred, options={'databaseURL': rtdb_url} if rtdb_url else None)
             elif os.path.exists('firebase_credentials.json'):
                 cred = fb_credentials.Certificate('firebase_credentials.json')
+                firebase_admin.initialize_app(cred, options={'databaseURL': rtdb_url} if rtdb_url else None)
+            elif os.path.exists('jamm-af884-firebase-adminsdk-fbsvc-89885ccb5a.json'):
+                cred = fb_credentials.Certificate('jamm-af884-firebase-adminsdk-fbsvc-89885ccb5a.json')
+                firebase_admin.initialize_app(cred, options={'databaseURL': rtdb_url} if rtdb_url else None)
+            elif os.path.exists(r'C:\\Users\\Sreenivasa\\Documents\\GitHub\\boyachatbot\\jamm-af884-firebase-adminsdk-fbsvc-89885ccb5a.json'):
+                cred = fb_credentials.Certificate(r'C:\\Users\\Sreenivasa\\Documents\\GitHub\\boyachatbot\\jamm-af884-firebase-adminsdk-fbsvc-89885ccb5a.json')
                 firebase_admin.initialize_app(cred, options={'databaseURL': rtdb_url} if rtdb_url else None)
             else:
                 try:
