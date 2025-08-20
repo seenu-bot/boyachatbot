@@ -14,6 +14,7 @@ import random
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse, Gather
 from google.oauth2.credentials import Credentials
+from google.oauth2 import service_account as google_service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -44,6 +45,12 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-change-me')
 
+# Runtime environment flags and writable data directory
+IS_RENDER = os.getenv('RENDER') is not None or os.getenv('RENDER_SERVICE_ID') is not None
+IS_VERCEL = os.getenv('VERCEL') is not None
+IS_SERVERLESS = IS_RENDER or IS_VERCEL or os.getenv('K_SERVICE') is not None or os.getenv('DYNO') is not None
+DATA_DIR = os.getenv('DATA_DIR') or ('/tmp' if IS_SERVERLESS else '.')
+
 # Initialize Firebase (Realtime Database) for leads
 rtdb_available = False
 rtdb_url = None
@@ -66,8 +73,17 @@ try:
         try:
             firebase_admin.get_app()
         except ValueError:
+            # Prefer service account JSON from env or file path
+            env_sa = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON')
             cred_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-            if cred_path and os.path.exists(cred_path):
+            if env_sa:
+                try:
+                    cred_info = json.loads(env_sa)
+                    cred = fb_credentials.Certificate(cred_info)
+                    firebase_admin.initialize_app(cred, options={'databaseURL': rtdb_url} if rtdb_url else None)
+                except Exception as e:
+                    logger.warning(f"Failed to init Firebase from GOOGLE_SERVICE_ACCOUNT_JSON: {e}")
+            elif cred_path and os.path.exists(cred_path):
                 cred = fb_credentials.Certificate(cred_path)
                 firebase_admin.initialize_app(cred, options={'databaseURL': rtdb_url} if rtdb_url else None)
             elif os.path.exists('firebase_credentials.json'):
@@ -96,15 +112,30 @@ SPREADSHEET_ID = '1KzT0Idmu420OWlLiH6cKcxLZv_zjIbmNq6HjXohKGp4'  # Your Google S
 RANGE_NAME = 'Calls!A:E'  # Sheet name and range
 
  # Configure Gemini
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyAIAqbokZhxpbstxZ8ZUOG1WGrVHrjK8_k')
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.0-flash')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+if GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-2.0-flash')
+    except Exception as e:
+        logger.warning(f"Failed to initialize Gemini: {e}")
+        model = None
+else:
+    logger.warning('GEMINI_API_KEY not set; using simple fallback replies.')
+    model = None
 
-# Configure Twilio
-TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', 'AC98028fc853ea846cf8926582807b9e49')
-TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', 'f262ad9c47a78436a1f90462e61c15bc')
-TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER', '+13154440346')
-twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+# Configure Twilio (optional)
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
+twilio_client = None
+if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_PHONE_NUMBER:
+    try:
+        twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    except Exception as e:
+        logger.warning(f"Twilio init failed: {e}")
+else:
+    logger.info('Twilio credentials not fully set; voice features disabled.')
 
 # Store appointments in memory (in production, use a database)
 appointments = []
@@ -140,20 +171,37 @@ COMMON_QUESTIONS = {
 
 def get_google_sheets_service():
     creds = None
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
+    # Prefer service account in server environments
+    try:
+        env_sa = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON')
+        if env_sa:
+            sa_info = json.loads(env_sa)
+            creds = google_service_account.Credentials.from_service_account_info(sa_info, scopes=SCOPES)
+            return build('sheets', 'v4', credentials=creds)
+        sa_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+        if sa_path and os.path.exists(sa_path):
+            creds = google_service_account.Credentials.from_service_account_file(sa_path, scopes=SCOPES)
+            return build('sheets', 'v4', credentials=creds)
+    except Exception as e:
+        logger.warning(f"Service account init for Sheets failed: {e}")
+
+    # On serverless platforms, OAuth flow isn't possible
+    if IS_SERVERLESS:
+        raise RuntimeError('Sheets OAuth is not supported on this platform. Set GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_APPLICATION_CREDENTIALS (service account).')
+
+    # Local/dev OAuth fallback
+    token_path = os.path.join(DATA_DIR, 'token.pickle')
+    if os.path.exists(token_path):
+        with open(token_path, 'rb') as token:
             creds = pickle.load(token)
-    
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
+    if not creds or not getattr(creds, 'valid', False):
+        if creds and getattr(creds, 'expired', False) and getattr(creds, 'refresh_token', None):
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
-        with open('token.pickle', 'wb') as token:
+        with open(token_path, 'wb') as token:
             pickle.dump(creds, token)
-
     return build('sheets', 'v4', credentials=creds)
 
 def save_call_summary(call_sid, phone_number, duration, summary):
@@ -212,6 +260,9 @@ Company Info:
 Services: {', '.join(IM_SOLUTIONS_DATA['services']['online_services'][:5])} and more.
 
 Be brief, helpful, and professional. Do not include contact information or website details in your response. If question is unrelated to {IM_SOLUTIONS_DATA['company_info']['name']}, politely redirect to our services."""
+
+        if not model:
+            return "I'm here to help with info about our services and scheduling. The AI key is not configured."
 
         response = model.generate_content(prompt)
         
@@ -310,7 +361,7 @@ def schedule_appointment():
         # Check for existing appointments at the same time
         existing_appointments = []
         try:
-            with open('appointments.csv', 'r', encoding='utf-8') as f:
+            with open(os.path.join(DATA_DIR, 'appointments.csv'), 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
                 existing_appointments = list(reader)
         except FileNotFoundError:
@@ -343,13 +394,16 @@ def schedule_appointment():
         appointments.append(appointment)
         
         # Save to CSV file
-        csv_file = 'appointments.csv'
-        file_exists = os.path.isfile(csv_file)
-        with open(csv_file, 'a', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['id', 'title', 'time', 'notes', 'status'])
-            if not file_exists:
-                writer.writeheader()
-            writer.writerow(appointment)
+        csv_file = os.path.join(DATA_DIR, 'appointments.csv')
+        try:
+            file_exists = os.path.isfile(csv_file)
+            with open(csv_file, 'a', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=['id', 'title', 'time', 'notes', 'status'])
+                if not file_exists:
+                    writer.writeheader()
+                writer.writerow(appointment)
+        except Exception as e:
+            logger.warning(f"Failed to persist appointment CSV: {e}")
         
         # Create iCalendar event
         cal = Calendar()
@@ -361,8 +415,13 @@ def schedule_appointment():
         cal.add_component(event)
         
         # Save to file (in production, use a database)
-        with open(f'appointments/{appointment["id"]}.ics', 'wb') as f:
-            f.write(cal.to_ical())
+        try:
+            appt_dir = os.path.join(DATA_DIR, 'appointments')
+            os.makedirs(appt_dir, exist_ok=True)
+            with open(os.path.join(appt_dir, f'{appointment["id"]}.ics'), 'wb') as f:
+                f.write(cal.to_ical())
+        except Exception as e:
+            logger.warning(f"Failed to write ICS file: {e}")
         
         # Save to Firebase Realtime Database
         try:
@@ -389,10 +448,13 @@ def get_appointments():
             appointments_list = list(snapshot.values()) if isinstance(snapshot, dict) else []
         else:
             appointments_list = []
-            with open('appointments.csv', 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    appointments_list.append(row)
+            try:
+                with open(os.path.join(DATA_DIR, 'appointments.csv'), 'r', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        appointments_list.append(row)
+            except FileNotFoundError:
+                appointments_list = []
         return jsonify({'appointments': appointments_list})
     except Exception as e:
         logger.error(f"Error getting appointments: {str(e)}")
@@ -410,7 +472,7 @@ def cancel_appointment():
         # Read all appointments
         appointments_list = []
         try:
-            with open('appointments.csv', 'r', encoding='utf-8') as f:
+            with open(os.path.join(DATA_DIR, 'appointments.csv'), 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
                 appointments_list = list(reader)
         except FileNotFoundError:
@@ -428,7 +490,7 @@ def cancel_appointment():
             return jsonify({'error': 'Appointment not found'}), 404
 
         # Write back all appointments
-        with open('appointments.csv', 'w', newline='', encoding='utf-8') as f:
+        with open(os.path.join(DATA_DIR, 'appointments.csv'), 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=['id', 'title', 'time', 'notes', 'status'])
             writer.writeheader()
             writer.writerows(appointments_list)
@@ -544,12 +606,16 @@ def initiate_call():
         logger.info(f"Attempting to initiate call to {to_number} from {TWILIO_PHONE_NUMBER}")
         logger.info(f"Using Twilio credentials - Account SID: {TWILIO_ACCOUNT_SID[:5]}...")
         
+        if not twilio_client:
+            return jsonify({'success': False, 'message': 'Twilio is not configured.'}), 503
+
+        base_url = os.getenv('PUBLIC_BASE_URL') or request.url_root.rstrip('/')
         # Make the call using Twilio
         call = twilio_client.calls.create(
             to=to_number,
             from_=TWILIO_PHONE_NUMBER,
-            url='https://437f-14-195-161-134.ngrok-free.app/voice',  # Updated ngrok URL
-            status_callback='https://437f-14-195-161-134.ngrok-free.app/call-completed',  # Updated ngrok URL
+            url=f'{base_url}/voice',
+            status_callback=f'{base_url}/call-completed',
             status_callback_event=['completed'],
             status_callback_method='POST'
         )
@@ -828,5 +894,5 @@ def dashboard():
 
 if __name__ == '__main__':
     # Create appointments directory if it doesn't exist
-    os.makedirs('appointments', exist_ok=True)
-    app.run(debug=True) 
+    os.makedirs(os.path.join(DATA_DIR, 'appointments'), exist_ok=True)
+    app.run(debug=True)
