@@ -3,170 +3,701 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IM Solutions Chatbot</title>
+    <title>IM Solutions AI Assistant</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
         body {
-            background: #fff;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
         }
+        
+        /* ensure input row compacts well on small screens */
+        #user-input { min-width: 0; }
+        .send-button { min-width: 84px; }
+        
+        .magical-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        }
+        
+        .magical-gradient-reverse {
+            background: linear-gradient(135deg, #f093fb 0%, #764ba2 50%, #667eea 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glow-effect {
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+        }
+        
         .message {
-            max-width: 80%;
-            margin: 10px;
-            padding: 10px 15px;
-            border-radius: 15px;
+            max-width: 85%;
+            margin: 8px 0;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            position: relative;
+            transition: all 0.3s ease;
+            animation: messageSlideIn 0.3s ease-out;
         }
+        
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         .user-message {
-            background-color: #e3f2fd;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            color: white;
             margin-left: auto;
+            margin-right: 0;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
         }
+        
         .bot-message {
-            background-color: #f5f5f5;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
             margin-right: auto;
+            margin-left: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
         }
-        .quick-btn {
-            background: #e3f2fd;
-            color: #1976d2;
-            border: none;
-            border-radius: 9999px;
-            padding: 0.25rem 0.75rem;
-            margin-right: 0.25rem;
-            margin-bottom: 0.25rem;
-            cursor: pointer;
-            font-size: 0.9rem;
+        
+        .bot-message:hover {
+            border-color: rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
         }
-        .quick-btn:hover {
-            background: #1976d2;
-            color: #fff;
-        }
-        .header-btn {
-            background: none;
-            border: none;
-            color: #666;
-            padding: 4px 8px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
-        .header-btn:hover {
-            background: #f0f0f0;
-            color: #333;
-        }
-        .voice-btn {
-            background: #e3f2fd;
-            border: none;
-            color: #1976d2;
-            padding: 8px 12px;
-            cursor: pointer;
-            border-radius: 0 4px 4px 0;
-            transition: all 0.2s;
+        
+        .read-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
-            gap: 4px;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-size: 12px;
+            opacity: 0.7;
         }
-        .voice-btn.active {
-            background: #1976d2;
+        
+        .read-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            transform: scale(1.1);
+            box-shadow: 0 0 12px rgba(102, 126, 234, 0.4);
+            opacity: 1;
+        }
+        
+        .bot-message:hover .read-btn {
+            opacity: 1;
+        }
+        
+        .quick-btn {
+            background: rgba(255, 255, 255, 0.1);
             color: white;
-            animation: pulse 1.5s infinite;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 8px 16px;
+            margin: 4px 4px 4px 0;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
+        
+        .quick-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .header-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .voice-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 16px;
+            cursor: pointer;
+            border-radius: 0 12px 12px 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .voice-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+        
         @keyframes pulse {
             0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+        
         #calendar-container {
             display: none;
-            margin-bottom: 10px;
-            padding: 10px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
             height: 300px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+        
         .fc-event {
             cursor: pointer;
         }
+        
         .scheduling-form {
             display: none;
             position: fixed;
             top: 50%;
-            right: 26rem;
-            transform: translateY(-50%);
-            width: 350px;
-            max-width: 90vw;
-            padding: 20px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            max-width: 450px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 25px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
             z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
         }
-        .scheduling-form::before {
-            display: none;
-        }
+        
         #chat-messages {
-            height: 300px;
+            height: 350px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
+        
+        /* Responsive Chat Window */
+        #chatbot-window {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 90vw;
+            max-width: 400px;
+            height: 75vh;
+            max-height: 600px;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(102, 126, 234, 0.2);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+        }
+        
+        /* Mobile-first responsive design */
+        @media (max-width: 640px) {
+            #chatbot-window {
+                width: 95vw;
+                height: 80vh;
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                border-radius: 18px;
+            }
+            
+            .scheduling-form {
+                width: 95vw;
+                max-width: none;
+                margin: 10px;
+            }
+            
+            .message {
+                max-width: 90%;
+                font-size: 13px;
+                padding: 10px 14px;
+                margin: 6px;
+            }
+            
+            .quick-btn {
+                font-size: 12px;
+                padding: 6px 12px;
+                margin: 3px 3px 3px 0;
+            }
+            
+            .form-container {
+                width: 95vw;
+                max-width: none;
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .form-input {
+                font-size: 16px;
+                padding: 14px 18px;
+            }
+            
+            .form-button {
+                padding: 14px 18px;
+                font-size: 16px;
+            }
+            
+            .header-btn {
+                padding: 8px 12px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+            
+            #user-input {
+                font-size: 16px;
+                padding: 10px 14px;
+            }
+            
+            .voice-btn {
+                padding: 10px 14px;
+                min-width: 44px;
+            }
+        }
+        
+        @media (min-width: 641px) and (max-width: 1024px) {
+            #chatbot-window {
+                width: 85vw;
+                max-width: 450px;
+                height: 70vh;
+            }
+        }
+        
+        @media (min-width: 1025px) {
+            #chatbot-window {
+                width: 400px;
+                height: 600px;
+            }
+        }
+        
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .quick-btn:hover {
+                background: rgba(255, 255, 255, 0.1);
+                transform: none;
+            }
+            
+            .form-button:hover {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            }
+            
+            .form-button.secondary:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+        }
+        
+        /* Form overlay styles */
+        .form-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Professional form styling */
+        .form-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            max-width: 480px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            animation: formSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes formSlideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+        
+        .form-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.8rem;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .form-subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            margin-bottom: 1.8rem;
+            font-size: 1rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            font-size: 15px;
+            margin-bottom: 1.3rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+        
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+        }
+        
+        .form-button {
+            width: 100%;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .form-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .form-button.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: 0.8rem;
+            box-shadow: none;
+        }
+        
+        .form-button.secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        /* Loading animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Enhanced floating chat button */
+        #chatbot-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 50;
+        }
+        
+        #chatbot-toggle button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            color: white;
+            border-radius: 50%;
+            padding: 18px;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 22px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #chatbot-toggle button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        #chatbot-toggle button:hover::before {
+            left: 100%;
+        }
+        
+        #chatbot-toggle button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+        }
+        
+        /* Input styling */
+        #user-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 12px 0 0 12px;
+            padding: 16px 20px;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+        }
+        
+        #user-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        #user-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 0 12px 12px 0;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Read button styling */
+        .read-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-size: 14px;
+        }
+        
+        .read-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Navigation styling */
+        .nav-link {
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.3s ease;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .nav-link.active {
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        }
+        
+        /* Hero section styling */
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 50%, rgba(240, 147, 251, 0.1) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+        }
+        
+        .stats-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+        /* Restore site sections visibility */
+        nav, section { display: block !important; }
+        /* Chatbot overlay positioning */
+        #chatbot-window { position: fixed; z-index: 1000; }
+        
+        /* Keep input row pinned to bottom inside chat window */
+        #chatbot-window .input-row { position: sticky; bottom: 0; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 min-h-screen relative">
+<body class="min-h-screen relative">
     <!-- Navigation Bar -->
-    <nav class="flex items-center justify-between px-8 py-4 bg-transparent">
-        <div class="flex items-center gap-2">
+    <nav class="flex items-center justify-between px-8 py-6 bg-transparent">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                <span class="text-white text-xl font-bold">IM</span>
+            </div>
             <span class="text-3xl font-bold text-white">imsolutions</span>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 2L12 22M12 2L5 9M12 2L19 9" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
-        <div class="flex gap-8 text-white font-semibold text-lg">
-            <a href="#" class="hover:text-blue-200">WHAT WE DO</a>
-            <a href="#" class="hover:text-blue-200">BLOG</a>
-            <a href="#" class="hover:text-blue-200">PODCAST</a>
-            <a href="#" class="hover:text-blue-200">CAREERS</a>
+        <div class="hidden md:flex gap-8 text-white font-medium text-lg">
+            <a href="#" class="nav-link">WHAT WE DO</a>
+            <a href="#" class="nav-link">BLOG</a>
+            <a href="#" class="nav-link">PODCAST</a>
+            <a href="#" class="nav-link">CAREERS</a>
         </div>
-        <a href="#" class="bg-pink-500 hover:bg-pink-600 text-white font-bold px-6 py-2 rounded-full shadow-lg transition">WORK WITH US</a>
+        <a href="#" class="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-bold px-8 py-3 rounded-full shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105">WORK WITH US</a>
     </nav>
 
     <!-- Hero Section -->
-    <section class="flex flex-col md:flex-row items-center justify-between px-8 md:px-24 py-16 md:py-24">
+    <section class="flex flex-col md:flex-row items-center justify-between px-8 md:px-24 py-20 md:py-32">
         <div class="max-w-xl text-center md:text-left">
-            <h1 class="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4">Unlock Your Business Potential With <span class="text-blue-200">Facebook & Instagram Advertising</span></h1>
-            <p class="text-lg md:text-xl text-blue-100 mb-8">Facebook Premier Level Partner Agency</p>
-            <a href="#" class="inline-block bg-pink-500 hover:bg-pink-600 text-white font-bold px-8 py-3 rounded-full text-lg shadow-lg transition mb-8">WORK WITH US</a>
-            <div class="flex flex-wrap gap-6 mt-10 justify-center md:justify-start">
-                <div class="flex flex-col items-center">
-                    <span class="bg-white rounded-full p-2 mb-2"><img src="https://img.icons8.com/ios-filled/50/1976d2/facebook-new.png" alt="Facebook" class="w-8 h-8"></span>
-                    <span class="text-xs text-white font-semibold">Facebook Premier<br>Level Agency Partner</span>
+            <h1 class="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-6">
+                Unlock Your Business Potential With 
+                <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    AI-Powered Marketing
+                </span>
+            </h1>
+            <p class="text-xl md:text-2xl text-blue-200 mb-10">Facebook Premier Level Partner Agency</p>
+            <a href="#" class="inline-block bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-bold px-10 py-4 rounded-full text-xl shadow-2xl transition-all duration-300 hover:shadow-3xl hover:scale-105 mb-10">WORK WITH US</a>
+            <div class="flex flex-wrap gap-8 mt-12 justify-center md:justify-start">
+                <div class="stats-card">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-white text-2xl">📱</span>
                 </div>
-                <div class="flex flex-col items-center">
-                    <span class="bg-white rounded-full p-2 mb-2"><img src="https://img.icons8.com/ios-filled/50/1976d2/google-logo.png" alt="Google" class="w-8 h-8"></span>
-                    <span class="text-xs text-white font-semibold">Google Endorsed<br>Marketing Partner</span>
+                        <span class="text-sm text-gray-300 font-medium">Facebook Premier<br>Level Agency Partner</span>
                 </div>
-                <div class="flex flex-col items-center">
-                    <span class="bg-white rounded-full p-2 mb-2"><img src="https://img.icons8.com/ios-filled/50/1976d2/forbes.png" alt="Forbes" class="w-8 h-8"></span>
-                    <span class="text-xs text-white font-semibold">Forbes Agency<br>Council Member</span>
                 </div>
-                <div class="flex flex-col items-center">
-                    <span class="bg-white rounded-full p-2 mb-2"><img src="https://img.icons8.com/ios-filled/50/1976d2/5000.png" alt="Inc 5000" class="w-8 h-8"></span>
-                    <span class="text-xs text-white font-semibold">Inc. 5000<br>Fastest Growing Company</span>
+                <div class="stats-card">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-white text-2xl">🔍</span>
+                </div>
+                        <span class="text-sm text-gray-300 font-medium">Google Endorsed<br>Marketing Partner</span>
+            </div>
+        </div>
+                <div class="stats-card">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-white text-2xl">🏆</span>
+                    </div>
+                        <span class="text-sm text-gray-300 font-medium">Forbes Agency<br>Council Member</span>
+                    </div>
+                    </div>
+                <div class="stats-card">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-white text-2xl">🚀</span>
+                        </div>
+                        <span class="text-sm text-gray-300 font-medium">Inc. 5000<br>Fastest Growing Company</span>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="mt-12 md:mt-0 md:ml-16 flex-1 flex justify-center">
-            <div class="relative w-80 h-96 bg-white bg-opacity-10 rounded-3xl shadow-2xl flex flex-col items-center justify-center">
-                <img src="https://img.icons8.com/ios-filled/100/4ade80/rocket--v1.png" alt="Rocket" class="w-24 h-24 mb-4">
-                <div class="flex flex-col gap-2 w-full px-6">
-                    <div class="bg-white bg-opacity-80 rounded-lg p-2 flex items-center gap-2">
-                        <span class="text-blue-600 font-bold">100K</span>
-                        <span class="text-xs text-gray-700">Likes</span>
+        <div class="mt-16 md:mt-0 md:ml-16 flex-1 flex justify-center">
+            <div class="hero-gradient relative w-96 h-96 rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8">
+                <div class="w-32 h-32 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                    <span class="text-white text-6xl">🚀</span>
+                </div>
+                <div class="text-center space-y-4">
+                    <div class="stats-card">
+                        <span class="text-2xl font-bold text-blue-400">100K+</span>
+                        <span class="text-sm text-gray-300">Likes</span>
                     </div>
-                    <div class="bg-white bg-opacity-80 rounded-lg p-2 flex items-center gap-2">
-                        <span class="text-blue-600 font-bold">$100M</span>
-                        <span class="text-xs text-gray-700">Annual Ad Spend</span>
+                    <div class="stats-card">
+                        <span class="text-2xl font-bold text-purple-400">$100M+</span>
+                        <span class="text-sm text-gray-300">Annual Ad Spend</span>
                     </div>
-                    <div class="bg-white bg-opacity-80 rounded-lg p-2 flex items-center gap-2">
-                        <span class="text-blue-600 font-bold">15+</span>
-                        <span class="text-xs text-gray-700">Years Experience</span>
+                    <div class="stats-card">
+                        <span class="text-2xl font-bold text-pink-400">15+</span>
+                        <span class="text-sm text-gray-300">Years Experience</span>
                     </div>
                 </div>
             </div>
@@ -174,121 +705,162 @@
     </section>
 
     <!-- Company Stats Section -->
-    <section class="flex flex-wrap justify-center gap-12 px-8 pb-24">
-        <div class="flex flex-col items-center">
-            <span class="text-3xl font-bold text-white">$100M</span>
-            <span class="text-blue-100 text-sm">In Annual Digital Ad Spend</span>
+    <section class="flex flex-wrap justify-center gap-12 px-8 pb-32">
+        <div class="stats-card text-center">
+            <span class="text-4xl font-bold text-white">$100M+</span>
+            <span class="text-blue-200 text-sm">In Annual Digital Ad Spend</span>
         </div>
-        <div class="flex flex-col items-center">
-            <span class="text-3xl font-bold text-white">15+</span>
-            <span class="text-blue-100 text-sm">Years of Facebook Advertising Experience</span>
+        <div class="stats-card text-center">
+            <span class="text-4xl font-bold text-white">15+</span>
+            <span class="text-blue-200 text-sm">Years of Facebook Advertising Experience</span>
         </div>
-        <div class="flex flex-col items-center">
-            <span class="text-3xl font-bold text-white">Inc. 5000</span>
-            <span class="text-blue-100 text-sm">Fastest Growing Company</span>
+        <div class="stats-card text-center">
+            <span class="text-4xl font-bold text-white">Inc. 5000</span>
+            <span class="text-blue-200 text-sm">Fastest Growing Company</span>
         </div>
-        <div class="flex flex-col items-center">
-            <span class="text-3xl font-bold text-white">Forbes</span>
-            <span class="text-blue-100 text-sm">Agency Council Member</span>
+        <div class="stats-card text-center">
+            <span class="text-4xl font-bold text-white">Forbes</span>
+            <span class="text-blue-200 text-sm">Agency Council Member</span>
         </div>
     </section>
 
     <!-- Floating Chat Button -->
-    <div id="chatbot-toggle" class="fixed bottom-6 right-6 z-50">
-        <button onclick="toggleChatbot()" class="bg-blue-600 text-white rounded-full p-4 shadow-lg">
+    <div id="chatbot-toggle">
+        <button onclick="showUserForm()" class="glow-effect">
             <span>💬</span>
         </button>
     </div>
 
-    <!-- Chatbot Window (hidden by default) -->
-    <div id="chatbot-window" class="fixed bottom-6 right-6 w-96 bg-white rounded-lg shadow-lg p-4 z-50 flex flex-col hidden" style="height: 650px;">
-        <div class="flex items-center justify-between mb-2">
-            <span class="font-bold text-blue-600">IM Solutions Chatbot</span>
+    <!-- User Form Overlay -->
+    <div id="form-overlay" class="form-overlay">
+        <div class="form-container">
+            <h2 class="form-title">Welcome to IM Solutions!</h2>
+            <p class="form-subtitle">Please share your details to start chatting with our AI assistant</p>
+            
+            <form id="user-form" onsubmit="submitUserForm(event)">
+                <input type="text" id="form-name" class="form-input" placeholder="Your Name *" required>
+                <input type="email" id="form-email" class="form-input" placeholder="Email Address *" required>
+                <input type="tel" id="form-phone" class="form-input" placeholder="Phone Number (Optional)">
+                <textarea id="form-company" class="form-input" placeholder="Company Name (Optional)" rows="2"></textarea>
+                
+                <button type="submit" class="form-button">
+                    <span id="submit-text">Start Chatting</span>
+                    <span id="submit-loading" class="loading-spinner" style="display: none;"></span>
+                </button>
+                
+                <button type="button" onclick="closeUserForm()" class="form-button secondary">
+                    Maybe Later
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chatbot Window (visible by default for debugging/visibility) -->
+    <div id="chatbot-window" style="display:flex;">
+        <div class="flex items-center justify-between mb-4 p-4 border-b border-white/10">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                    <span class="text-white text-base">🤖</span>
+                </div>
+                <div>
+                    <span class="font-bold text-white text-lg">IM Solutions AI</span>
+                    <div class="text-xs text-gray-300">Your Digital Marketing Assistant</div>
+                </div>
+            </div>
             <div class="flex gap-2">
+                <button onclick="toggleTextToSpeech()" class="header-btn" id="tts-toggle" title="Toggle Text-to-Speech">🔊</button>
                 <button onclick="refreshChat()" class="header-btn" title="Refresh Chat">🔄</button>
                 <button onclick="closeChatbot()" class="header-btn" title="Close Chat">✕</button>
             </div>
         </div>
+        
         <div id="calendar-container"></div>
-        <div id="chat-messages" class="flex-1 overflow-y-auto mb-2 bg-gray-50 p-2 rounded" style="scroll-behavior: smooth; min-height: 0;">
+        
+        <div id="chat-messages" class="flex-1 overflow-y-auto mb-4 mx-4 p-4" style="scroll-behavior: smooth; min-height: 0;">
             <div class="message bot-message">
-                Hello! I'm the IM Solutions chatbot. How can I help you today? I can provide information about our services, including digital marketing, advertising, branding, and more. I can also help you schedule appointments.
+                <div class="flex items-start justify-between">
+                    <span class="flex-1">Hey there! 👋 I'm your IM Solutions AI buddy. Ready to rock your business growth? Let's chat about digital marketing, ads, or anything else on your mind! 🚀</span>
+                    <button onclick="readMessage(this)" class="read-btn ml-2" title="Read message">🔊</button>
             </div>
         </div>
+        </div>
+        
         <div id="scheduling-form" class="scheduling-form">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-lg">Schedule Appointment</h3>
-                <button onclick="cancelScheduling()" class="text-gray-500 hover:text-gray-700">
+                <h3 class="font-bold text-lg text-white">Schedule Appointment</h3>
+                <button onclick="cancelScheduling()" class="text-gray-400 hover:text-white">
                     ✕
                 </button>
             </div>
-            <input type="text" id="appointment-title" placeholder="Appointment Title" class="w-full p-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="text" id="appointment-time" placeholder="Select date & time" class="w-full p-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <textarea id="appointment-notes" placeholder="Notes" class="w-full p-2 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea>
-            <div class="flex justify-end space-x-2">
-                <button onclick="cancelScheduling()" class="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">Cancel</button>
-                <button onclick="submitAppointment()" class="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Schedule</button>
+            <input type="text" id="appointment-title" placeholder="Appointment Title" class="form-input">
+            <input type="text" id="appointment-time" placeholder="Select date & time" class="form-input">
+            <textarea id="appointment-notes" placeholder="Notes" class="form-input" rows="3"></textarea>
+            <div class="flex justify-end space-x-3">
+                <button onclick="cancelScheduling()" class="form-button secondary">Cancel</button>
+                <button onclick="submitAppointment()" class="form-button">Schedule</button>
             </div>
         </div>
-        <div class="mb-2 flex flex-wrap gap-2" id="quick-btns">
+        
+        <div class="mb-4 flex flex-wrap gap-2 px-4" id="quick-btns">
             <button class="quick-btn" id="btn-whatwedo" onclick="sendQuick('What we do', 'btn-whatwedo')">What we do</button>
             <button class="quick-btn" id="btn-services" onclick="sendQuick('Services', 'btn-services')">Services</button>
             <button class="quick-btn" id="btn-aboutus" onclick="sendQuick('About Us', 'btn-aboutus')">About Us</button>
             <button class="quick-btn" id="btn-schedule" onclick="showSchedulingForm()">Schedule Meeting</button>
             <button class="quick-btn" id="btn-cancel" onclick="showCancelForm()">Cancel Appointment</button>
-
             <button class="quick-btn" id="btn-lead" onclick="showLeadForm()">Share Contact</button>
         </div>
+        
         <!-- Cancel Appointment Form -->
         <div id="cancel-form" class="scheduling-form">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-lg">Cancel Appointment</h3>
-                <button onclick="cancelCancelForm()" class="text-gray-500 hover:text-gray-700">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-xl text-white">Cancel Appointment</h3>
+                <button onclick="cancelCancelForm()" class="text-gray-400 hover:text-white">
                     ✕
                 </button>
             </div>
-            <input type="text" id="appointment-id" placeholder="Enter Appointment ID" class="w-full p-2 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <div class="flex justify-end space-x-2">
-                <button onclick="cancelCancelForm()" class="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">Cancel</button>
-                <button onclick="submitCancellation()" class="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">Cancel Appointment</button>
+            <input type="text" id="appointment-id" placeholder="Enter Appointment ID" class="form-input">
+            <div class="flex justify-end space-x-3">
+                <button onclick="cancelCancelForm()" class="form-button secondary">Cancel</button>
+                <button onclick="submitCancellation()" class="form-button">Cancel Appointment</button>
             </div>
         </div>
 
         <div id="user-details-form" class="scheduling-form">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-lg">Welcome! Please share your details</h3>
-                <button onclick="skipUserDetails()" class="text-gray-500 hover:text-gray-700">✕</button>
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-xl text-white">Welcome! Please share your details</h3>
+                <button onclick="skipUserDetails()" class="text-gray-400 hover:text-white">✕</button>
             </div>
-            <input type="text" id="user-name" placeholder="Your Name" class="w-full p-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="email" id="user-email" placeholder="Email" class="w-full p-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="tel" id="user-phone" placeholder="Phone" class="w-full p-2 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <div class="flex justify-end space-x-2">
-                <button onclick="skipUserDetails()" class="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">Skip</button>
-                <button onclick="submitUserDetails()" class="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Continue</button>
+            <input type="text" id="user-name" placeholder="Your Name" class="form-input">
+            <input type="email" id="user-email" placeholder="Email" class="form-input">
+            <input type="tel" id="user-phone" placeholder="Phone" class="form-input">
+            <div class="flex justify-end space-x-3">
+                <button onclick="skipUserDetails()" class="form-button secondary">Skip</button>
+                <button onclick="submitUserDetails()" class="form-button">Continue</button>
             </div>
         </div>
+        
         <div id="lead-form" class="scheduling-form">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-lg">Share your contact</h3>
-                <button onclick="cancelLeadForm()" class="text-gray-500 hover:text-gray-700">✕</button>
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-xl text-white">Share your contact</h3>
+                <button onclick="cancelLeadForm()" class="text-gray-400 hover:text-white">✕</button>
             </div>
-            <input type="text" id="lead-name" placeholder="Your Name" class="w-full p-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="email" id="lead-email" placeholder="Email " class="w-full p-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="tel" id="lead-phone" placeholder="Phone " class="w-full p-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <textarea id="lead-message" placeholder="How can we help? " class="w-full p-2 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea>
-            <div class="flex justify-end space-x-2">
-                <button onclick="cancelLeadForm()" class="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">Cancel</button>
-                <button onclick="submitLead()" class="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Submit</button>
+            <input type="text" id="lead-name" placeholder="Your Name" class="form-input">
+            <input type="email" id="lead-email" placeholder="Email" class="form-input">
+            <input type="tel" id="lead-phone" placeholder="Phone" class="form-input">
+            <textarea id="lead-message" placeholder="How can we help?" class="form-input" rows="3"></textarea>
+            <div class="flex justify-end space-x-3">
+                <button onclick="cancelLeadForm()" class="form-button secondary">Cancel</button>
+                <button onclick="submitLead()" class="form-button">Submit</button>
             </div>
         </div>
 
-        <div class="flex mt-auto">
-            <input id="user-input" type="text" class="flex-1 border rounded-l p-2" placeholder="Type your message...">
+        <div class="flex mt-auto p-4 border-t border-white/10 bg-white/5 input-row">
+            <input id="user-input" type="text" class="flex-1" placeholder="Type your message...">
             <button onclick="toggleVoiceInput()" class="voice-btn" id="voice-btn" title="Voice Input">
                 <span>🎤</span>
                 <span class="hidden sm:inline">Voice</span>
             </button>
-            <button onclick="sendMessage()" class="bg-blue-600 text-white px-4 rounded-r">Send</button>
+            <button onclick="sendMessage()" class="send-button">Send</button>
         </div>
     </div>
 
@@ -398,7 +970,7 @@
             const notes = document.getElementById('appointment-notes').value;
 
             if (!title || !time) {
-                addMessage('Please fill in all required fields.', false);
+                addMessage('Oops! Missing some deets. Please fill in the title and time! 📝', false);
                 return;
             }
 
@@ -419,9 +991,9 @@
                 if (status === 409) {
                     // Handle double-booking error
                     const existingTime = new Date(data.existing_appointment.time).toLocaleString();
-                    addMessage(`This time slot is already booked by "${data.existing_appointment.title}" at ${existingTime}. Please choose a different time.`, false);
+                    addMessage(`Time slot's taken! "${data.existing_appointment.title}" beat you to it at ${existingTime}. Pick another time! ⏰`, false);
                 } else if (data.error) {
-                    addMessage(data.error, false);
+                    addMessage(`Uh-oh! ${data.error} 😅`, false);
                 } else {
                     // Add event to calendar
                     calendar.addEvent({
@@ -432,18 +1004,18 @@
                             appointmentId: data.appointment_id
                         }
                     });
-                    addMessage(`Appointment scheduled successfully! Your appointment ID is: ${data.appointment_id}`, false);
+                    addMessage(`Boom! 🎯 Appointment locked in! Your ID: ${data.appointment_id}. We'll see you there!`, false);
                     cancelScheduling();
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                addMessage('Failed to schedule appointment. Please try again.', false);
+                addMessage('Oops! Something went wrong. Let\'s try that again! 🔄', false);
             });
         }
 
         function showEventDetails(event) {
-            const details = `Title: ${event.title}\nTime: ${event.start.toLocaleString()}\n${event.extendedProps.description ? 'Notes: ' + event.extendedProps.description : ''}`;
+            const details = `📅 ${event.title}\n⏰ ${event.start.toLocaleString()}\n${event.extendedProps.description ? '📝 ' + event.extendedProps.description : ''}`;
             addMessage(details, false);
         }
 
@@ -454,14 +1026,31 @@
             }
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            if (!isUser) {
+                // Add read button for bot messages
+                messageDiv.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <span class="flex-1">${message}</span>
+                        <button onclick="readMessage(this)" class="read-btn ml-3" title="Read message">🔊</button>
+                    </div>
+                `;
+            } else {
             messageDiv.textContent = message;
+            }
+            
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // Speak bot messages
-            if (!isUser) {
+            // Only speak bot messages if text-to-speech is enabled
+            if (!isUser && document.getElementById('voice-btn').classList.contains('active')) {
                 speak(message);
             }
+        }
+
+        function readMessage(button) {
+            const messageText = button.parentElement.querySelector('span').textContent;
+            speak(messageText);
         }
 
         function showLoading() {
@@ -469,7 +1058,7 @@
             loadingDiv = document.createElement('div');
             loadingDiv.className = 'message bot-message';
             loadingDiv.id = 'loading-animation';
-            loadingDiv.innerHTML = '<span id="dots">Loading</span>';
+            loadingDiv.innerHTML = '<span id="dots">Thinking...</span>';
             chatMessages.appendChild(loadingDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
             animateDots();
@@ -482,7 +1071,7 @@
             clearInterval(dotsInterval);
             dotsInterval = setInterval(() => {
                 dotCount = (dotCount + 1) % 4;
-                dotsSpan.textContent = 'Loading' + '.'.repeat(dotCount);
+                dotsSpan.textContent = 'Thinking' + '.'.repeat(dotCount);
             }, 500);
         }
 
@@ -536,7 +1125,7 @@
             .catch(error => {
                 hideLoading();
                 console.error('Error:', error);
-                addMessage('Sorry, I encountered an error. Please try again.', false);
+                addMessage('Oops! Something went wrong. Let\'s try again! 🔄', false);
             });
         }
 
@@ -546,20 +1135,13 @@
             }
         });
 
-        function toggleChatbot() {
-            const chatWindow = document.getElementById('chatbot-window');
-            chatWindow.classList.toggle('hidden');
-            
-            // Show user details form on first open
-            if (!chatbotOpened && !chatWindow.classList.contains('hidden')) {
-                chatbotOpened = true;
-                showUserDetailsForm();
-            }
-        }
-
         function closeChatbot() {
             const chatWindow = document.getElementById('chatbot-window');
             chatWindow.classList.add('hidden');
+            chatWindow.style.display = 'none';
+            
+            // Reset chat state
+            refreshChat();
         }
 
         function refreshChat() {
@@ -568,6 +1150,18 @@
             while (chatMessages.children.length > 1) {
                 chatMessages.removeChild(chatMessages.lastChild);
             }
+            
+            // Reset initial message with read button
+            const initialMessage = chatMessages.querySelector('.message.bot-message');
+            if (initialMessage) {
+                initialMessage.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <span class="flex-1">Hey there! 👋 I'm your IM Solutions AI buddy. Ready to rock your business growth? Let's chat about digital marketing, ads, or anything else on your mind! 🚀</span>
+                        <button onclick="readMessage(this)" class="read-btn ml-3" title="Read message">🔊</button>
+                    </div>
+                `;
+            }
+            
             // Reset quick buttons visibility
             const quickBtns = document.querySelectorAll('.quick-btn');
             quickBtns.forEach(btn => btn.style.display = '');
@@ -580,7 +1174,48 @@
             document.getElementById('lead-form').style.display = 'none';
             document.getElementById('user-details-form').style.display = 'none';
             leadCapture = { active: false, step: 0, data: {} };
+            
+            // Reset text-to-speech state
+            const ttsToggle = document.getElementById('tts-toggle');
+            const voiceBtn = document.getElementById('voice-btn');
+            if (ttsToggle && voiceBtn) {
+                ttsToggle.textContent = '🔊';
+                voiceBtn.classList.remove('active');
+            }
         }
+
+        // Add responsive handling for window resize
+        window.addEventListener('resize', function() {
+            const chatWindow = document.getElementById('chatbot-window');
+            if (!chatWindow.classList.contains('hidden')) {
+                // Ensure proper positioning on resize
+                setTimeout(() => {
+                    if (window.innerWidth <= 640) {
+                        chatWindow.style.width = '95vw';
+                        chatWindow.style.height = '80vh';
+                    } else if (window.innerWidth <= 1024) {
+                        chatWindow.style.width = '85vw';
+                        chatWindow.style.maxWidth = '450px';
+                        chatWindow.style.height = '70vh';
+                    } else {
+                        chatWindow.style.width = '400px';
+                        chatWindow.style.height = '600px';
+                    }
+                }, 100);
+            }
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Escape key to close forms
+            if (e.key === 'Escape') {
+                if (document.getElementById('form-overlay').style.display === 'block') {
+                    closeUserForm();
+                } else if (!document.getElementById('chatbot-window').classList.contains('hidden')) {
+                    closeChatbot();
+                }
+            }
+        });
 
         function sendQuick(message, btnId) {
             document.getElementById('user-input').value = message;
@@ -612,7 +1247,7 @@
             const message = document.getElementById('lead-message').value.trim();
 
             if (!name || (!email && !phone)) {
-                addMessage('Please provide your name and at least one contact method (email or phone).', false);
+                addMessage('Hey! We need your name and at least one way to reach you (email or phone). Let\'s make it happen! 📱', false);
                 return;
             }
 
@@ -624,15 +1259,15 @@
             .then(res => res.json().then(data => ({ status: res.status, data })))
             .then(({ status, data }) => {
                 if (data.success) {
-                    addMessage('Thanks! Your contact has been shared successfully.', false);
+                    addMessage('Awesome! 🎉 Your contact is in our system. We\'ll reach out soon with some magic! ✨', false);
                     cancelLeadForm();
                 } else {
-                    addMessage(`Error: ${data.message || 'Failed to submit lead.'}`, false);
+                    addMessage(`Oops! ${data.message || 'Something went wrong.'} Let\'s try again! 🔄`, false);
                 }
             })
             .catch(err => {
                 console.error(err);
-                addMessage('Failed to submit your contact. Please try again.', false);
+                addMessage('Network hiccup! Let\'s try submitting your contact again! 🌐', false);
             });
         }
 
@@ -640,7 +1275,7 @@
         function startLeadFlow() {
             if (leadCapture.active) return;
             leadCapture = { active: true, step: 0, data: {} };
-            addMessage("Great! I can share your details with our team. What's your name?", false);
+            addMessage("Sweet! Let's get you connected with our team! What's your name? 🎯", false);
         }
 
         function handleLeadMessage(text) {
@@ -649,7 +1284,7 @@
             if (leadCapture.step === 0) {
                 leadCapture.data.name = t;
                 leadCapture.step = 1;
-                addMessage("Thanks, " + t + ". What's your email? You can type 'skip' if you prefer.", false);
+                addMessage(`Nice to meet you, ${t}! What's your email? (or type 'skip' if you prefer) 📧`, false);
                 return;
             }
             if (leadCapture.step === 1) {
@@ -657,7 +1292,7 @@
                     leadCapture.data.email = t;
                 }
                 leadCapture.step = 2;
-                addMessage("Got it. What's your phone number? You can type 'skip' if you prefer.", false);
+                addMessage("Got it! Phone number? (or 'skip' if you want) 📱", false);
                 return;
             }
             if (leadCapture.step === 2) {
@@ -666,12 +1301,12 @@
                 }
                 // Require at least one contact
                 if (!leadCapture.data.email && !leadCapture.data.phone) {
-                    addMessage("Please share at least one contact method (email or phone).", false);
+                    addMessage("We need at least one way to reach you! Email or phone, your choice! 📞", false);
                     leadCapture.step = 1;
                     return;
                 }
                 leadCapture.step = 3;
-                addMessage("Any message for us? You can type 'skip' to submit now.", false);
+                addMessage("Any message for us? (or 'skip' to submit now) 💬", false);
                 return;
             }
             if (leadCapture.step === 3) {
@@ -693,13 +1328,13 @@
                 .then(res => res.json().then(data => ({ status: res.status, data })))
                 .then(({ status, data }) => {
                     if (data.success) {
-                        addMessage("Thanks! I've shared your details with our team. We'll reach out soon. You can view your submission in the dashboard (internal).", false);
+                        addMessage("Perfect! 🎯 Your details are with our team. We'll hit you up soon with some awesome stuff! 🚀", false);
                     } else {
-                        addMessage(`Sorry, I couldn't submit your details (${data.message || 'unknown error'}). Please try again later.`, false);
+                        addMessage(`Bummer! ${data.message || 'Something went wrong.'} Let's try again later! 😅`, false);
                     }
                 })
                 .catch(() => {
-                    addMessage('Sorry, I could not submit your details due to a network error.', false);
+                    addMessage('Network glitch! We\'ll try again later! 🌐', false);
                 })
                 .finally(() => {
                     leadCapture = { active: false, step: 0, data: {} };
@@ -722,7 +1357,7 @@
             const appointmentId = document.getElementById('appointment-id').value.trim();
 
             if (!appointmentId) {
-                addMessage('Please enter an appointment ID.', false);
+                addMessage('Hey! We need that appointment ID to help you out! 🔍', false);
                 return;
             }
 
@@ -738,17 +1373,17 @@
             .then(response => response.json().then(data => ({ status: response.status, data })))
             .then(({ status, data }) => {
                 if (status === 404) {
-                    addMessage(`Error: ${data.error}`, false);
+                    addMessage(`Oops! ${data.error} 🤷‍♂️`, false);
                 } else if (data.error) {
-                    addMessage(`Error: ${data.error}`, false);
+                    addMessage(`Uh-oh! ${data.error} 😅`, false);
                 } else {
-                    addMessage(`Appointment ${data.appointment_id} has been cancelled successfully.`, false);
+                    addMessage(`Done! ✅ Appointment ${data.appointment_id} is cancelled. We'll miss you! 😢`, false);
                     cancelCancelForm();
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                addMessage('Failed to cancel appointment. Please try again.', false);
+                addMessage('Something went wrong! Let\'s try cancelling again! 🔄', false);
             });
         }
 
@@ -775,7 +1410,7 @@
                     console.error('Speech recognition error:', event.error);
                     isListening = false;
                     document.getElementById('voice-btn').classList.remove('active');
-                    addMessage('Sorry, there was an error with voice recognition. Please try again.', false);
+                    addMessage('Voice recognition hiccup! Let\'s try again! 🎤', false);
                 };
             } else {
                 console.error('Speech recognition not supported');
@@ -785,7 +1420,7 @@
 
         // Initialize speech synthesis
         function speak(text) {
-            if (speechSynthesis) {
+            if (speechSynthesis && document.getElementById('voice-btn').classList.contains('active')) {
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.rate = 1.0;
                 utterance.pitch = 1.0;
@@ -810,6 +1445,27 @@
             }
         }
 
+        // Text-to-Speech Toggle
+        function toggleTextToSpeech() {
+            const ttsToggle = document.getElementById('tts-toggle');
+            const voiceBtn = document.getElementById('voice-btn');
+
+            if (speechSynthesis) {
+                if (voiceBtn.classList.contains('active')) {
+                    speechSynthesis.cancel(); // Stop any ongoing speech
+                    voiceBtn.classList.remove('active');
+                    ttsToggle.textContent = '🔊'; // Toggle to text
+                } else {
+                    voiceBtn.classList.add('active');
+                    ttsToggle.textContent = '🔇'; // Toggle to speech
+                }
+            } else {
+                console.error('Speech synthesis not supported');
+                voiceBtn.style.display = 'none';
+                ttsToggle.style.display = 'none';
+            }
+        }
+
         // User Details Functions
         function showUserDetailsForm() {
             const form = document.getElementById('user-details-form');
@@ -820,7 +1476,7 @@
             const form = document.getElementById('user-details-form');
             form.style.display = 'none';
             userDetails = { name: 'Anonymous', email: '', phone: '' };
-            addMessage('Welcome! How can I help you today?', false);
+            addMessage('Hey Anonymous! 👋 How can I help you today?', false);
         }
 
         function submitUserDetails() {
@@ -829,7 +1485,7 @@
             const phone = document.getElementById('user-phone').value.trim();
 
             if (!name) {
-                addMessage('Please enter your name to continue.', false);
+                addMessage('Hey! We need your name to continue! 📝', false);
                 return;
             }
 
@@ -837,9 +1493,116 @@
             const form = document.getElementById('user-details-form');
             form.style.display = 'none';
             
-            addMessage(`Welcome, ${name}! How can I help you today?`, false);
+            addMessage(`Awesome, ${name}! 🎉 What can I help you with today?`, false);
         }
 
+        // User Form Overlay Functions
+        function showUserForm() {
+            document.getElementById('form-overlay').style.display = 'block';
+            document.getElementById('user-form').reset(); // Reset form fields
+            document.getElementById('submit-text').style.display = 'block';
+            document.getElementById('submit-loading').style.display = 'none';
+        }
+
+        function closeUserForm() {
+            document.getElementById('form-overlay').style.display = 'none';
+        }
+
+        function submitUserForm(event) {
+            event.preventDefault();
+            
+            // Show loading state
+            document.getElementById('submit-text').style.display = 'none';
+            document.getElementById('submit-loading').style.display = 'inline-block';
+            
+            const name = document.getElementById('form-name').value.trim();
+            const email = document.getElementById('form-email').value.trim();
+            const phone = document.getElementById('form-phone').value.trim();
+            const company = document.getElementById('form-company').value.trim();
+
+            if (!name || !email) {
+                alert('Please provide your name and email to continue.');
+                // Reset loading state
+                document.getElementById('submit-text').style.display = 'block';
+                document.getElementById('submit-loading').style.display = 'none';
+                return;
+            }
+
+            // Check if user exists
+            checkUserExists(email, name, phone, company);
+        }
+
+        function checkUserExists(email, name, phone, company) {
+            // Store user data in localStorage for demo purposes
+            // In production, this would be stored in your database
+            const existingUsers = JSON.parse(localStorage.getItem('chatbot_users') || '[]');
+            const existingUser = existingUsers.find(user => user.email === email);
+            
+            if (existingUser) {
+                // Returning user
+                userDetails = existingUser;
+                addMessage(`Welcome back, ${name}! 🎉 Great to see you again. How can I help you today?`, false);
+            } else {
+                // New user
+                userDetails = { name, email, phone, company, firstVisit: new Date().toISOString() };
+                existingUsers.push(userDetails);
+                localStorage.setItem('chatbot_users', JSON.stringify(existingUsers));
+                addMessage(`Welcome to the family, ${name}! 🌟 First time here and already making moves. What's on your mind today?`, false);
+                
+                // Store user data in backend for dashboard
+                storeUserDataInBackend(name, email, phone, company);
+            }
+            
+            // Store in session for dashboard
+            sessionStorage.setItem('current_user', JSON.stringify(userDetails));
+            
+            // Close form and open chat
+            setTimeout(() => {
+                document.getElementById('form-overlay').style.display = 'none';
+                openChatbot();
+                
+                // Reset loading state
+                document.getElementById('submit-text').style.display = 'block';
+                document.getElementById('submit-loading').style.display = 'none';
+            }, 500);
+        }
+
+        function storeUserDataInBackend(name, email, phone, company) {
+            fetch('/store_user_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    phone: phone || '',
+                    company: company || ''
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('User data stored successfully');
+                } else {
+                    console.error('Failed to store user data:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error storing user data:', error);
+            });
+        }
+
+        function openChatbot() {
+            const chatWindow = document.getElementById('chatbot-window');
+            chatWindow.classList.remove('hidden');
+            chatWindow.style.display = 'flex';
+            
+            // Focus on input
+            setTimeout(() => {
+                document.getElementById('user-input').focus();
+            }, 100);
+        }
     </script>
 </body>
 </html> 

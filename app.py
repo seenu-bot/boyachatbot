@@ -49,46 +49,37 @@ rtdb_available = False
 rtdb_url = None
 try:
     if firebase_admin is not None:
-        # Infer database URL
-        rtdb_url = os.getenv('FIREBASE_DB_URL')
-        if not rtdb_url:
+        # Use the correct Firebase credentials file
+        cred_file_path = 'imsolutions-e8ddd-firebase-adminsdk-fbsvc-885065031e.json'
+        
+        if os.path.exists(cred_file_path):
             try:
-                cred_file_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS') or 'firebase_credentials.json'
-                if os.path.exists(cred_file_path):
-                    with open(cred_file_path, 'r', encoding='utf-8') as cred_file:
-                        cred_json = json.load(cred_file)
-                        project_id_guess = cred_json.get('project_id')
-                        if project_id_guess:
-                            rtdb_url = f"https://{project_id_guess}-default-rtdb.firebaseio.com"
-            except Exception:
-                pass
-
-        try:
-            firebase_admin.get_app()
-        except ValueError:
-            cred_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-            if cred_path and os.path.exists(cred_path):
-                cred = fb_credentials.Certificate(cred_path)
-                firebase_admin.initialize_app(cred, options={'databaseURL': rtdb_url} if rtdb_url else None)
-            elif os.path.exists('firebase_credentials.json'):
-                cred = fb_credentials.Certificate('firebase_credentials.json')
-                firebase_admin.initialize_app(cred, options={'databaseURL': rtdb_url} if rtdb_url else None)
-            else:
-                try:
-                    cred = fb_credentials.ApplicationDefault()
-                    firebase_admin.initialize_app(cred, options={'databaseURL': rtdb_url} if rtdb_url else None)
-                except Exception as e:
-                    logger.warning(f"Firebase not initialized (no credentials found): {e}")
-        # Check RTDB availability by accessing root reference
-        try:
-            _ = fb_db.reference('/')
-            rtdb_available = True
-        except Exception as e:
-            logger.warning(f"Realtime Database not available: {e}")
+                # Load credentials from the service account file
+                cred = fb_credentials.Certificate(cred_file_path)
+                
+                # Set the database URL explicitly
+                rtdb_url = "https://imsolutions-e8ddd-default-rtdb.firebaseio.com/"
+                
+                # Initialize Firebase with explicit credentials and database URL
+                firebase_admin.initialize_app(cred, {
+                    'databaseURL': rtdb_url
+                })
+                
+                logger.info(f"Firebase initialized successfully with database: {rtdb_url}")
+                rtdb_available = True
+                
+            except Exception as e:
+                logger.error(f"Failed to initialize Firebase with credentials: {e}")
+                rtdb_available = False
+        else:
+            logger.warning(f"Firebase credentials file not found: {cred_file_path}")
+            rtdb_available = False
+            
     else:
         logger.warning('firebase_admin is not installed. Leads dashboard will be disabled until installed.')
 except Exception as e:
     logger.error(f"Unexpected Firebase init error: {e}")
+    rtdb_available = False
 
 # Google Sheets setup
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -272,20 +263,28 @@ def send_message():
         logger.debug(f"Sending response to user: {bot_response}")
         
         # Store conversation in Firebase
-        try:
-            if rtdb_available:
+        if rtdb_available:
+            try:
                 conversation_id = str(uuid.uuid4())
                 conversation_data = {
                     'id': conversation_id,
                     'user_message': user_message,
                     'bot_response': bot_response,
                     'timestamp': int(time.time() * 1000),
-                    'session_id': request.json.get('session_id', 'default'),
-                    'user_details': request.json.get('user_details', {})
+                    'session_id': session.get('session_id', 'default'),
+                    'user_details': {
+                        'name': session.get('name', 'Anonymous'),
+                        'email': session.get('email', ''),
+                        'phone': session.get('phone', '')
+                    }
                 }
-                fb_db.reference('conversations').child(conversation_id).set(conversation_data)
-        except Exception as e:
-            logger.warning(f"Failed to save conversation to RTDB: {e}")
+                
+                safe_firebase_operation(
+                    lambda: fb_db.reference('conversations').child(conversation_id).set(conversation_data)
+                )
+                
+            except Exception as e:
+                logger.warning(f"Failed to save conversation to RTDB: {e}")
         
         return jsonify({'response': bot_response})
     except Exception as e:
@@ -365,11 +364,14 @@ def schedule_appointment():
             f.write(cal.to_ical())
         
         # Save to Firebase Realtime Database
-        try:
-            if rtdb_available:
-                fb_db.reference('appointments').child(appointment_id).set(appointment)
-        except Exception as e:
-            logger.warning(f"Failed to save appointment to RTDB: {e}")
+        if rtdb_available:
+            try:
+                safe_firebase_operation(
+                    lambda: fb_db.reference('appointments').child(appointment_id).set(appointment)
+                )
+                logger.info(f"Appointment saved to Firebase: {appointment_id}")
+            except Exception as e:
+                logger.warning(f"Failed to save appointment to RTDB: {e}")
         
         return jsonify({
             'message': 'Appointment scheduled successfully',
@@ -385,7 +387,10 @@ def get_appointments():
     try:
         # Prefer RTDB if available
         if rtdb_available:
-            snapshot = fb_db.reference('appointments').get() or {}
+            snapshot = safe_firebase_operation(
+                lambda: fb_db.reference('appointments').get(),
+                {}
+            )
             appointments_list = list(snapshot.values()) if isinstance(snapshot, dict) else []
         else:
             appointments_list = []
@@ -433,12 +438,15 @@ def cancel_appointment():
             writer.writeheader()
             writer.writerows(appointments_list)
 
-        # Update in RTDB as well
-        try:
-            if rtdb_available:
-                fb_db.reference('appointments').child(appointment_id).update({'status': 'cancelled'})
-        except Exception as e:
-            logger.warning(f"Failed to update appointment in RTDB: {e}")
+        # Update Firebase
+        if rtdb_available:
+            try:
+                safe_firebase_operation(
+                    lambda: fb_db.reference('appointments').child(appointment_id).update({'status': 'cancelled'})
+                )
+                logger.info(f"Appointment cancelled in Firebase: {appointment_id}")
+            except Exception as e:
+                logger.warning(f"Failed to update appointment in RTDB: {e}")
 
         return jsonify({
             'message': 'Appointment cancelled successfully',
@@ -641,12 +649,26 @@ def create_lead():
             'created_at': now_ts
         }
 
-        fb_db.reference('leads').child(lead_id).set(lead_data)
+        safe_firebase_operation(
+            lambda: fb_db.reference('leads').child(lead_id).set(lead_data)
+        )
 
         return jsonify({'success': True, 'message': 'Lead submitted successfully', 'lead_id': lead_id})
     except Exception as e:
         logger.error(f"Error creating lead: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
+
+# Helper function for safe Firebase operations
+def safe_firebase_operation(operation, default_value=None):
+    """Safely execute Firebase operations with error handling"""
+    if not rtdb_available:
+        return default_value
+    
+    try:
+        return operation()
+    except Exception as e:
+        logger.warning(f"Firebase operation failed: {e}")
+        return default_value
 
 @app.route('/dashboard', methods=['GET'])
 @login_required
@@ -672,100 +694,103 @@ def dashboard():
             error_message = 'Realtime Database is not configured on the server. Upload credentials and restart the app.'
         else:
             # Load leads
-            try:
-                snapshot = fb_db.reference('leads').get() or {}
-                for key, d in snapshot.items():
-                    created_ms = d.get('created_at') or 0
-                    try:
-                        created_dt = datetime.fromtimestamp(created_ms / 1000)
-                        created_iso = created_dt.isoformat()
-                        leads_day_counts[created_dt.strftime('%Y-%m-%d')] += 1
-                    except Exception:
-                        created_dt = None
-                        created_iso = str(created_ms)
-                    leads.append({
-                        'id': d.get('id', key),
-                        'name': d.get('name', ''),
-                        'email': d.get('email', ''),
-                        'phone': d.get('phone', ''),
-                        'message': d.get('message', ''),
-                        'source': d.get('source', ''),
-                        'created_at': created_iso
-                    })
-            except Exception as e:
-                logger.warning(f"Failed to load leads from RTDB: {e}")
+            leads_snapshot = safe_firebase_operation(
+                lambda: fb_db.reference('leads').get(),
+                {}
+            )
+            
+            for key, d in leads_snapshot.items():
+                created_ms = d.get('created_at') or 0
+                try:
+                    created_dt = datetime.fromtimestamp(created_ms / 1000)
+                    created_iso = created_dt.isoformat()
+                    leads_day_counts[created_dt.strftime('%Y-%m-%d')] += 1
+                except Exception:
+                    created_dt = None
+                    created_iso = str(created_ms)
+                leads.append({
+                    'id': d.get('id', key),
+                    'name': d.get('name', ''),
+                    'email': d.get('email', ''),
+                    'phone': d.get('phone', ''),
+                    'message': d.get('message', ''),
+                    'source': d.get('source', ''),
+                    'created_at': created_iso
+                })
 
             # Load appointments
-            try:
-                a_snapshot = fb_db.reference('appointments').get() or {}
-                for key, d in a_snapshot.items():
-                    time_str = d.get('time', '')
-                    try:
-                        time_dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
-                        time_iso = time_dt.isoformat()
-                    except Exception:
-                        time_dt = None
-                        time_iso = time_str
-                    status = (d.get('status') or 'pending').lower()
-                    appointments_view.append({
-                        'id': d.get('id', key),
-                        'title': d.get('title', ''),
-                        'time': time_iso,
-                        'notes': d.get('notes', ''),
-                        'status': status
-                    })
-                    appt_status_counts[status] += 1
-                    try:
-                        if status != 'cancelled' and time_dt and time_dt > datetime.utcnow():
-                            metrics['upcomingAppointments'] += 1
-                    except Exception:
-                        pass
-            except Exception as e:
-                logger.warning(f"Failed to load appointments from RTDB: {e}")
+            appointments_snapshot = safe_firebase_operation(
+                lambda: fb_db.reference('appointments').get(),
+                {}
+            )
+            
+            for key, d in appointments_snapshot.items():
+                time_str = d.get('time', '')
+                try:
+                    time_dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
+                    time_iso = time_dt.isoformat()
+                except Exception:
+                    time_dt = None
+                    time_iso = time_str
+                status = (d.get('status') or 'pending').lower()
+                appointments_view.append({
+                    'id': d.get('id', key),
+                    'title': d.get('title', ''),
+                    'time': time_iso,
+                    'notes': d.get('notes', ''),
+                    'status': status
+                })
+                appt_status_counts[status] += 1
+                try:
+                    if status != 'cancelled' and time_dt and time_dt > datetime.utcnow():
+                        metrics['upcomingAppointments'] += 1
+                except Exception:
+                    pass
 
             # Load conversations and extract user details
-            try:
-                c_snapshot = fb_db.reference('conversations').get() or {}
-                user_sessions = {}  # Track users by session_id
+            conversations_snapshot = safe_firebase_operation(
+                lambda: fb_db.reference('conversations').get(),
+                {}
+            )
+            
+            user_sessions = {}  # Track users by session_id
+            
+            for key, d in conversations_snapshot.items():
+                timestamp_ms = d.get('timestamp') or 0
+                try:
+                    timestamp_iso = datetime.fromtimestamp(timestamp_ms / 1000).isoformat()
+                except Exception:
+                    timestamp_iso = str(timestamp_ms)
                 
-                for key, d in c_snapshot.items():
-                    timestamp_ms = d.get('timestamp') or 0
-                    try:
-                        timestamp_iso = datetime.fromtimestamp(timestamp_ms / 1000).isoformat()
-                    except Exception:
-                        timestamp_iso = str(timestamp_ms)
-                    
-                    user_details = d.get('user_details', {})
-                    session_id = d.get('session_id', 'default')
-                    
-                    conversations.append({
-                        'id': d.get('id', key),
-                        'user_message': d.get('user_message', ''),
-                        'bot_response': d.get('bot_response', ''),
-                        'timestamp': timestamp_iso,
+                user_details = d.get('user_details', {})
+                session_id = d.get('session_id', 'default')
+                
+                conversations.append({
+                    'id': d.get('id', key),
+                    'user_message': d.get('user_message', ''),
+                    'bot_response': d.get('bot_response', ''),
+                    'timestamp': timestamp_iso,
+                    'session_id': session_id,
+                    'user_details': user_details
+                })
+                
+                # Track unique users by session
+                if session_id not in user_sessions:
+                    user_sessions[session_id] = {
+                        'name': user_details.get('name', 'Anonymous'),
+                        'email': user_details.get('email', ''),
+                        'phone': user_details.get('phone', ''),
+                        'first_seen': timestamp_iso,
+                        'last_seen': timestamp_iso,
                         'session_id': session_id,
-                        'user_details': user_details
-                    })
-                    
-                    # Track unique users by session
-                    if session_id not in user_sessions:
-                        user_sessions[session_id] = {
-                            'name': user_details.get('name', 'Anonymous'),
-                            'email': user_details.get('email', ''),
-                            'phone': user_details.get('phone', ''),
-                            'first_seen': timestamp_iso,
-                            'last_seen': timestamp_iso,
-                            'session_id': session_id,
-                            'conversation_count': 1
-                        }
-                    else:
-                        user_sessions[session_id]['last_seen'] = timestamp_iso
-                        user_sessions[session_id]['conversation_count'] += 1
-                
-                # Convert user sessions to list
-                users = list(user_sessions.values())
-            except Exception as e:
-                logger.warning(f"Failed to load conversations from RTDB: {e}")
+                        'conversation_count': 1
+                    }
+                else:
+                    user_sessions[session_id]['last_seen'] = timestamp_iso
+                    user_sessions[session_id]['conversation_count'] += 1
+            
+            # Convert user sessions to list
+            users = list(user_sessions.values())
 
         try:
             leads.sort(key=lambda x: x.get('created_at') or '', reverse=True)
@@ -820,11 +845,105 @@ def dashboard():
             leads_chart_labels=leads_chart_labels,
             leads_chart_data=leads_chart_data,
             appt_status_labels=appt_status_labels,
-            appt_status_data=appt_status_data
+            appt_status_data=appt_status_data,
+            rtdb_available=rtdb_available
         )
     except Exception as e:
         logger.error(f"Error loading dashboard: {str(e)}")
-        return render_template('dashboard.html', leads=[], appointments=[], conversations=[], users=[], error_message=str(e))
+        return render_template('dashboard.html', 
+            leads=[], 
+            appointments=[], 
+            conversations=[], 
+            users=[], 
+            error_message=str(e),
+            metrics={
+                'totalLeads': 0,
+                'leadsToday': 0,
+                'totalAppointments': 0,
+                'upcomingAppointments': 0,
+                'totalConversations': 0,
+                'totalUsers': 0
+            },
+            leads_chart_labels=[],
+            leads_chart_data=[],
+            appt_status_labels=[],
+            appt_status_data=[],
+            rtdb_available=rtdb_available
+        )
+
+@app.route('/store_user_data', methods=['POST'])
+def store_user_data():
+    """Store user form data from chatbot"""
+    try:
+        data = request.get_json()
+        user_data = {
+            'name': data.get('name'),
+            'email': data.get('email'),
+            'phone': data.get('phone', ''),
+            'company': data.get('company', ''),
+            'timestamp': datetime.now().isoformat(),
+            'source': 'chatbot_form'
+        }
+        
+        # Store in Firebase if available
+        if rtdb_available:
+            try:
+                # Store in users node
+                users_ref = fb_db.reference('users')
+                users_ref.push(user_data)
+                logger.info(f"User data stored in Firebase: {user_data['email']}")
+            except Exception as e:
+                logger.error(f"Failed to store user data in Firebase: {e}")
+        
+        # Also store locally for backup
+        try:
+            with open('users_data.json', 'a') as f:
+                f.write(json.dumps(user_data) + '\n')
+        except Exception as e:
+            logger.error(f"Failed to store user data locally: {e}")
+        
+        return jsonify({'success': True, 'message': 'User data stored successfully'})
+        
+    except Exception as e:
+        logger.error(f"Error storing user data: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/get_users_data')
+def get_users_data():
+    """Get all users data for dashboard"""
+    try:
+        users_data = []
+        
+        # Try to get from Firebase first
+        if rtdb_available:
+            try:
+                users_ref = fb_db.reference('users')
+                firebase_data = users_ref.get()
+                if firebase_data:
+                    for key, value in firebase_data.items():
+                        if isinstance(value, dict):
+                            value['id'] = key
+                            users_data.append(value)
+            except Exception as e:
+                logger.error(f"Failed to get users data from Firebase: {e}")
+        
+        # If no Firebase data, try local file
+        if not users_data:
+            try:
+                if os.path.exists('users_data.json'):
+                    with open('users_data.json', 'r') as f:
+                        for line in f:
+                            if line.strip():
+                                user_data = json.loads(line.strip())
+                                users_data.append(user_data)
+            except Exception as e:
+                logger.error(f"Failed to read local users data: {e}")
+        
+        return jsonify({'users': users_data})
+        
+    except Exception as e:
+        logger.error(f"Error getting users data: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Create appointments directory if it doesn't exist
