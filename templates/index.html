@@ -241,72 +241,151 @@
         /* Mobile-first responsive design */
         @media (max-width: 640px) {
             #chatbot-window {
-                width: 92vw;
-                height: 75vh;
-                bottom: 10px;
-                right: 10px;
-                left: 10px;
-                border-radius: 16px;
+                width: 100vw;
+                height: 100vh;
+                bottom: 0;
+                right: 0;
+                left: 0;
+                border-radius: 0;
+                max-width: none;
+                max-height: none;
             }
             
             .scheduling-form {
                 width: 95vw;
                 max-width: none;
                 margin: 10px;
+                max-height: 80vh;
             }
             
             .message {
-                max-width: 90%;
-                font-size: 13px;
-                padding: 10px 14px;
-                margin: 6px;
+                max-width: 92%;
+                font-size: 14px;
+                padding: 12px 16px;
+                margin: 8px 0;
             }
             
             .quick-btn {
-                font-size: 12px;
-                padding: 6px 12px;
-                margin: 3px 3px 3px 0;
+                font-size: 13px;
+                padding: 8px 14px;
+                margin: 4px 4px 4px 0;
+                min-height: 36px;
             }
             
             .form-container {
                 width: 95vw;
                 max-width: none;
                 margin: 10px;
-            padding: 20px;
+                padding: 24px;
             }
             
             .form-input {
                 font-size: 16px;
-                padding: 14px 18px;
+                padding: 16px 20px;
+                margin-bottom: 16px;
             }
             
             .form-button {
-                padding: 14px 18px;
+                padding: 16px 20px;
                 font-size: 16px;
+                margin-bottom: 12px;
             }
             
             .header-btn {
-                padding: 8px 12px;
-                min-width: 44px;
-                min-height: 44px;
+                padding: 10px 14px;
+                min-width: 48px;
+                min-height: 48px;
+                font-size: 16px;
             }
             
             #user-input {
                 font-size: 16px;
-                padding: 10px 14px;
+                padding: 12px 16px;
+                min-height: 48px;
             }
             
             .voice-btn {
-                padding: 10px 14px;
-                min-width: 44px;
+                padding: 12px 16px;
+                min-width: 48px;
+                min-height: 48px;
+                font-size: 16px;
+            }
+            
+            .send-button {
+                padding: 12px 20px;
+                min-height: 48px;
+                font-size: 16px;
+            }
+            
+            /* Improve touch targets */
+            .quick-btn, .header-btn, .voice-btn, .send-button {
+                touch-action: manipulation;
+            }
+            
+            /* Better spacing for mobile */
+            #chat-messages {
+                padding: 16px;
+                margin: 0 16px 16px 16px;
+            }
+            
+            .input-row {
+                padding: 16px;
+                gap: 8px;
+            }
+            
+            /* Full screen chatbot header */
+            #chatbot-window .flex.items-center.justify-between {
+                padding: 16px;
+                margin-bottom: 0;
             }
         }
         
         @media (min-width: 641px) and (max-width: 1024px) {
             #chatbot-window {
+                width: 85vw;
+                max-width: 480px;
+                height: 75vh;
+                max-height: 600px;
+            }
+            
+            .scheduling-form {
                 width: 80vw;
-                max-width: 420px;
-                height: 65vh;
+                max-width: 400px;
+                max-height: 75vh;
+            }
+            
+            .form-container {
+                width: 80vw;
+                max-width: 400px;
+            }
+            
+            .message {
+                max-width: 88%;
+                font-size: 14px;
+                padding: 12px 16px;
+            }
+            
+            .quick-btn {
+                font-size: 13px;
+                padding: 8px 14px;
+                min-height: 40px;
+            }
+            
+            .input-row {
+                padding: 16px;
+                gap: 12px;
+            }
+            
+            #user-input {
+                font-size: 15px;
+                padding: 12px 16px;
+                min-height: 44px;
+            }
+            
+            .voice-btn, .send-button {
+                padding: 12px 18px;
+                min-height: 44px;
+                font-size: 15px;
             }
         }
         
@@ -722,53 +801,53 @@
 </head>
 <body class="min-h-screen relative">
     <!-- Navigation Bar -->
-    <nav class="flex items-center justify-between px-8 py-6 bg-transparent">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <span class="text-white text-xl font-bold">IM</span>
+    <nav class="flex items-center justify-between px-4 md:px-8 py-4 md:py-6 bg-transparent">
+        <div class="flex items-center gap-2 md:gap-3">
+            <div class="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                <span class="text-white text-sm md:text-xl font-bold">IM</span>
             </div>
-            <span class="text-3xl font-bold text-white">imsolutions</span>
+            <span class="text-xl md:text-3xl font-bold text-white">imsolutions</span>
         </div>
-        <div class="hidden md:flex gap-8 text-white font-medium text-lg">
+        <div class="hidden md:flex gap-4 lg:gap-8 text-white font-medium text-base lg:text-lg">
             <a href="#" class="nav-link">WHAT WE DO</a>
             <a href="#" class="nav-link">BLOG</a>
             <a href="#" class="nav-link">PODCAST</a>
             <a href="#" class="nav-link">CAREERS</a>
         </div>
-        <a href="#" class="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-bold px-8 py-3 rounded-full shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105">WORK WITH US</a>
+        <a href="#" class="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-bold px-4 md:px-8 py-2 md:py-3 rounded-full shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 text-sm md:text-base">WORK WITH US</a>
     </nav>
 
     <!-- Hero Section -->
-    <section class="flex flex-col md:flex-row items-center justify-between px-8 md:px-24 py-20 md:py-32">
+    <section class="flex flex-col md:flex-row items-center justify-between px-4 md:px-8 lg:px-24 py-12 md:py-20 lg:py-32">
         <div class="max-w-xl text-center md:text-left">
-            <h1 class="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-6">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-4 md:mb-6">
                 Unlock Your Business Potential With 
                 <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                     AI-Powered Marketing
                 </span>
             </h1>
-            <p class="text-xl md:text-2xl text-blue-200 mb-10">Facebook Premier Level Partner Agency</p>
-            <a href="#" class="inline-block bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-bold px-10 py-4 rounded-full text-xl shadow-2xl transition-all duration-300 hover:shadow-3xl hover:scale-105 mb-10">WORK WITH US</a>
-            <div class="flex flex-wrap gap-8 mt-12 justify-center md:justify-start">
+            <p class="text-lg md:text-xl lg:text-2xl text-blue-200 mb-6 md:mb-10">Facebook Premier Level Partner Agency</p>
+            <a href="#" class="inline-block bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-bold px-6 md:px-10 py-3 md:py-4 rounded-full text-lg md:text-xl shadow-2xl transition-all duration-300 hover:shadow-3xl hover:scale-105 mb-6 md:mb-10">WORK WITH US</a>
+            <div class="flex flex-wrap gap-4 md:gap-8 mt-8 md:mt-12 justify-center md:justify-start">
                 <div class="stats-card">
                     <div class="text-center">
-                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-white text-2xl">📱</span>
+                        <div class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-2 md:mb-3">
+                            <span class="text-white text-lg md:text-2xl">📱</span>
                 </div>
-                        <span class="text-sm text-gray-300 font-medium">Facebook Premier<br>Level Agency Partner</span>
+                        <span class="text-xs md:text-sm text-gray-300 font-medium">Facebook Premier<br>Level Agency Partner</span>
                 </div>
                 </div>
                 <div class="stats-card">
                     <div class="text-center">
-                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-white text-2xl">🔍</span>
+                        <div class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-2 md:mb-3">
+                            <span class="text-white text-lg md:text-2xl">🔍</span>
                 </div>
-                        <span class="text-sm text-gray-300 font-medium">Google Endorsed<br>Marketing Partner</span>
+                        <span class="text-xs md:text-sm text-gray-300 font-medium">Google Endorsed<br>Marketing Partner</span>
             </div>
         </div>
                 <div class="stats-card">
                     <div class="text-center">
-                        <div class="w-16 h-16 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <div class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-2 md:mb-3">
                             <span class="text-white text-2xl">🏆</span>
                     </div>
                         <span class="text-sm text-gray-300 font-medium">Forbes Agency<br>Council Member</span>
@@ -808,28 +887,28 @@
     </section>
 
     <!-- Company Stats Section -->
-    <section class="flex flex-wrap justify-center gap-12 px-8 pb-32">
+    <section class="flex flex-wrap justify-center gap-6 md:gap-12 px-4 md:px-8 pb-16 md:pb-32">
         <div class="stats-card text-center">
-            <span class="text-4xl font-bold text-white">$100M+</span>
-            <span class="text-blue-200 text-sm">In Annual Digital Ad Spend</span>
+            <span class="text-2xl md:text-4xl font-bold text-white">$100M+</span>
+            <span class="text-blue-200 text-xs md:text-sm">In Annual Digital Ad Spend</span>
         </div>
         <div class="stats-card text-center">
-            <span class="text-4xl font-bold text-white">15+</span>
-            <span class="text-blue-200 text-sm">Years of Facebook Advertising Experience</span>
+            <span class="text-2xl md:text-4xl font-bold text-white">15+</span>
+            <span class="text-blue-200 text-xs md:text-sm">Years of Facebook Advertising Experience</span>
         </div>
         <div class="stats-card text-center">
-            <span class="text-4xl font-bold text-white">Inc. 5000</span>
-            <span class="text-blue-200 text-sm">Fastest Growing Company</span>
+            <span class="text-2xl md:text-4xl font-bold text-white">Inc. 5000</span>
+            <span class="text-blue-200 text-xs md:text-sm">Fastest Growing Company</span>
         </div>
         <div class="stats-card text-center">
-            <span class="text-4xl font-bold text-white">Forbes</span>
-            <span class="text-blue-200 text-sm">Agency Council Member</span>
+            <span class="text-2xl md:text-4xl font-bold text-white">Forbes</span>
+            <span class="text-blue-200 text-xs md:text-sm">Agency Council Member</span>
         </div>
     </section>
 
     <!-- Floating Chat Button -->
-    <div id="chatbot-toggle">
-        <button onclick="showUserForm()" class="glow-effect">
+    <div id="chatbot-toggle" class="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50">
+        <button onclick="showUserForm()" class="glow-effect w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-xl md:text-2xl shadow-lg hover:shadow-xl transition-all duration-300">
             <span>💬</span>
         </button>
     </div>
@@ -1077,7 +1156,10 @@
                 return;
             }
 
-            // Send to server
+            // Get user data from sessionStorage
+            const currentUser = JSON.parse(sessionStorage.getItem('current_user') || '{}');
+            
+            // Send to server with user information
             fetch('/schedule_appointment', {
                 method: 'POST',
                 headers: {
@@ -1086,7 +1168,11 @@
                 body: JSON.stringify({
                     title: title,
                     time: time,
-                    notes: notes
+                    notes: notes,
+                    user_name: currentUser.name || '',
+                    user_email: currentUser.email || '',
+                    user_phone: currentUser.phone || '',
+                    user_company: currentUser.company || ''
                 })
             })
             .then(response => response.json().then(data => ({ status: response.status, data })))
@@ -1658,6 +1744,21 @@
             
             // Store in session for dashboard
             sessionStorage.setItem('current_user', JSON.stringify(userDetails));
+            
+            // Also send user data to server session for appointments
+            fetch('/set_user_session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    phone: phone || '',
+                    company: company || ''
+                })
+            })
+            .catch(error => console.log('Session update error:', error));
             
             // Close form and open chat
             setTimeout(() => {

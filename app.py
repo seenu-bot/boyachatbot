@@ -49,30 +49,38 @@ rtdb_available = False
 rtdb_url = None
 try:
     if firebase_admin is not None:
-        # Use the correct Firebase credentials file
-        cred_file_path = 'imsolutions-e8ddd-firebase-adminsdk-fbsvc-885065031e.json'
+        # Firebase credentials embedded directly in code
+        firebase_credentials = {
+            "type": "service_account",
+            "project_id": "imsolutions-e8ddd",
+            "private_key_id": "0c3837dc09330f1200b285a3bba04a1618237674",
+            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDcmOSdVdCzZTzZ\njlBja52XBrjnh69rPwpdFewoGfT/aPJR5KmNJ1IqFSvPduk1BWwiLtpwKVEC2Mlw\ngYh3FA/a2RgdZoopwf17wvgQ1JZhIBKib7wdy7sd7ia56RlrrE2CjjfRAkbGILl0\nbxNmNCh/Br8wDgIcLsj29A6j8uy8/kNOVJdBXzHkJuA9x5X2nO8ufa/6/VipHW01\nwo1uxw160A1z9lLDsEZYMFM5CwpDBuXcQUVzY5THXsBS+REDmFoTag5XQYYs76iP\nS7ukvTN5hNwGuh2u4I8UeBatWe1oYV9RdnL1jIJ70AkqD5ow+fhWgmi9ZOp/6TsG\nwTyGxMf/AgMBAAECggEAYR/F5AnQ8fM8V9MDTMqoX0K77WB9mPvv/az1xXAsQLm9\nmtXQ2s95qwKYP+csZUZGZkR3s1NVkinNgwXdBgSkuGfF6MfpQ9pf1vowCwT2Urvy\nyGbmjb3R3CsrDMZ3BUOe+sDQDWtxqrDkxkFTarfDLq5TRf6c6jilDanFumRt3AVK\n4MEdQ3d19jU+1IcSp9ocbDtcfTSSRZY6jUtCwgEERywCPT3tC7NFptKIFi5WcLc8\nYsXbupfX7Mx/yF+9/2K5bSQtoKjRNqlRPyBek5ccpUgGMqIPCOPVZZLuRY+o549B\nsZl89ZG/v7U3JdnTWaB5Yc3dlEIGKmqs5hyfHpvp0QKBgQD/hDgenz0ESdKYQ+zT\nQnk/+KrVqg3eOfE355KYRIykio50HIVzddqnyAqIjzQszjvhF+ErUu80qGjkTx8n\ngULtrPofmz/EixtRL0lRKYQEWbpPK0PGkwcCU7QKc51BuB5Hj5bie3E+X2q+ECoj\nlXyQIxS1fTJhA0V5jfq7X+94bwKBgQDdA8H8CYtyPGTfJA43lLiOSYs2i6RAfl28\nSQwwePu9RUQjH4A37SOY+0/lH2HKzVpPndHMSa/hZ2bZbhFZwNubU2xj5FS/Q3PE\n8irZRsdaWrxmP7pf3bKN7Mgl5aOTg7kDmeci3JbjFygyafjCItApVc0gBqt4CTXr\nuPyvMiLRcQKBgHmKpT87s8SEcR5owRBEwHRDjs+P0oTwvuM+ziaMBPKHzfdBUeF4\nIAhLSWdn5wOhHi6WM09uZcaAjVR8pm8eN33jGB9Ms+qD2PynJ5Lp0phXLh5WkCi2\n61CaDDwkfpsyP4T+smENIvLuZFIAUmsWwme1qDYkVYB8E+IcPTZADiMVAoGBAKqf\nFgiezbpZCX6CdT9PXtLpz8FCOIFZjL+onPJm0+EgMiPzU6bZOZwGl31IptRLiCbi\nrW5KjK80hl/g6yAhFOhqlMjhItOtHRiz44RtccU9OyislhMgMZIDc9hd2dQt4oz3\nKUruhMW3wN56lQI6ofznMj5BJ+q5IZli7B/MUrjhAoGAa338R1+AUccXH4s8E8KN\ncOlMw6g7Nq7rYaZj3+10dBvvTv++SlB7/TYaHD6WjFfNbe7TVhcYgCM3phycPo+9\n57zmnTQ+UJ8IObVByaMphpAqsHuKPr7k1dKi22FHOK9HhqB13syIVxe7UecmCTx4\npLvy6dHSkby0e6Db58+6Q9o=\n-----END PRIVATE KEY-----\n",
+            "client_email": "firebase-adminsdk-fbsvc@imsolutions-e8ddd.iam.gserviceaccount.com",
+            "client_id": "113917165170149522619",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40imsolutions-e8ddd.iam.gserviceaccount.com",
+            "universe_domain": "googleapis.com"
+        }
         
-        if os.path.exists(cred_file_path):
-            try:
-                # Load credentials from the service account file
-                cred = fb_credentials.Certificate(cred_file_path)
-                
-                # Set the database URL explicitly
-                rtdb_url = "https://imsolutions-e8ddd-default-rtdb.firebaseio.com/"
-                
-                # Initialize Firebase with explicit credentials and database URL
-                firebase_admin.initialize_app(cred, {
-                    'databaseURL': rtdb_url
-                })
-                
-                logger.info(f"Firebase initialized successfully with database: {rtdb_url}")
-                rtdb_available = True
-                
-            except Exception as e:
-                logger.error(f"Failed to initialize Firebase with credentials: {e}")
-                rtdb_available = False
-        else:
-            logger.warning(f"Firebase credentials file not found: {cred_file_path}")
+        try:
+            # Load credentials from the embedded dictionary
+            cred = fb_credentials.Certificate(firebase_credentials)
+            
+            # Set the database URL explicitly
+            rtdb_url = "https://imsolutions-e8ddd-default-rtdb.firebaseio.com/"
+            
+            # Initialize Firebase with explicit credentials and database URL
+            firebase_admin.initialize_app(cred, {
+                'databaseURL': rtdb_url
+            })
+            
+            logger.info(f"Firebase initialized successfully with database: {rtdb_url}")
+            rtdb_available = True
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize Firebase with credentials: {e}")
             rtdb_available = False
             
     else:
@@ -329,12 +337,24 @@ def schedule_appointment():
         random_num = random.randint(1000, 9999)
         appointment_id = f"APT-{timestamp}-{random_num}"
         
-        # Create appointment object
+        # Create appointment object - get user info from request or session
         user_info = {
-            'name': session.get('name', ''),
-            'email': session.get('email', ''),
-            'phone': session.get('phone', '')
+            'name': data.get('user_name') or session.get('name', ''),
+            'email': data.get('user_email') or session.get('email', ''),
+            'phone': data.get('user_phone') or session.get('phone', ''),
+            'company': data.get('user_company', '')
         }
+        
+        # If no user name is available, try to generate a meaningful identifier
+        if not user_info['name']:
+            # Try to get user info from request headers or other sources
+            user_agent = request.headers.get('User-Agent', '')
+            if 'bot' in user_agent.lower():
+                user_info['name'] = 'Chatbot User'
+            elif user_agent:
+                user_info['name'] = 'Web User'
+            else:
+                user_info['name'] = 'Anonymous User'
         appointment = {
             'id': appointment_id,
             'title': title,
@@ -353,7 +373,7 @@ def schedule_appointment():
         with open(csv_file, 'a', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(
                 f,
-                fieldnames=['id', 'title', 'time', 'notes', 'status', 'user_name', 'user_email', 'user_phone']
+                fieldnames=['id', 'title', 'time', 'notes', 'status', 'user_name', 'user_email', 'user_phone', 'user_company']
             )
             if not file_exists:
                 writer.writeheader()
@@ -365,7 +385,8 @@ def schedule_appointment():
                 'status': appointment['status'],
                 'user_name': user_info.get('name', ''),
                 'user_email': user_info.get('email', ''),
-                'user_phone': user_info.get('phone', '')
+                'user_phone': user_info.get('phone', ''),
+                'user_company': user_info.get('company', '')
             })
         
         # Create iCalendar event
@@ -763,17 +784,48 @@ def dashboard():
                     time_dt = None
                     time_iso = time_str
                 status = (d.get('status') or 'pending').lower()
+                
+                # Extract user information properly
+                user_data = d.get('user', {})
+                if not user_data:
+                    # Fallback to flat fields if user object doesn't exist
+                    user_data = {
+                        'name': d.get('user_name', ''),
+                        'email': d.get('user_email', ''),
+                        'phone': d.get('user_phone', ''),
+                        'company': d.get('user_company', '')
+                    }
+                
+                # Ensure user data has proper structure
+                if isinstance(user_data, dict):
+                    user_info = {
+                        'name': user_data.get('name', 'Anonymous User'),
+                        'email': user_data.get('email', ''),
+                        'phone': user_data.get('phone', ''),
+                        'company': user_data.get('company', '')
+                    }
+                else:
+                    user_info = {
+                        'name': 'Anonymous User',
+                        'email': '',
+                        'phone': '',
+                        'company': ''
+                    }
+                
+                # If user name is still empty, provide a meaningful default
+                if not user_info['name'] or user_info['name'] == 'Anonymous':
+                    user_info['name'] = 'Anonymous User'
+                
+                # Log the user info for debugging
+                logger.debug(f"Appointment {d.get('id', key)} user info: {user_info}")
+                
                 appointments_view.append({
                     'id': d.get('id', key),
                     'title': d.get('title', ''),
                     'time': time_iso,
                     'notes': d.get('notes', ''),
                     'status': status,
-                    'user': d.get('user', {
-                        'name': d.get('user_name', ''),
-                        'email': d.get('user_email', ''),
-                        'phone': d.get('user_phone', '')
-                    })
+                    'user': user_info
                 })
                 appt_status_counts[status] += 1
                 try:
@@ -957,6 +1009,21 @@ def dashboard():
             appt_status_data=[],
             rtdb_available=rtdb_available
         )
+
+@app.route('/set_user_session', methods=['POST'])
+def set_user_session():
+    """Set user data in Flask session for appointment scheduling"""
+    try:
+        data = request.get_json()
+        session['name'] = data.get('name', '')
+        session['email'] = data.get('email', '')
+        session['phone'] = data.get('phone', '')
+        session['company'] = data.get('company', '')
+        logger.info(f"User session updated: {session.get('name', 'Unknown')}")
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error setting user session: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/store_user_data', methods=['POST'])
 def store_user_data():
