@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import pytz
 from icalendar import Calendar, Event
 import json
+import base64
 import csv
 import random
 from twilio.rest import Client
@@ -49,38 +50,52 @@ rtdb_available = False
 rtdb_url = None
 try:
     if firebase_admin is not None:
-        # Firebase credentials embedded directly in code
-        firebase_credentials = {
-            "type": "service_account",
-            "project_id": "imsolutions-e8ddd",
-            "private_key_id": "0c3837dc09330f1200b285a3bba04a1618237674",
-            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDcmOSdVdCzZTzZ\njlBja52XBrjnh69rPwpdFewoGfT/aPJR5KmNJ1IqFSvPduk1BWwiLtpwKVEC2Mlw\ngYh3FA/a2RgdZoopwf17wvgQ1JZhIBKib7wdy7sd7ia56RlrrE2CjjfRAkbGILl0\nbxNmNCh/Br8wDgIcLsj29A6j8uy8/kNOVJdBXzHkJuA9x5X2nO8ufa/6/VipHW01\nwo1uxw160A1z9lLDsEZYMFM5CwpDBuXcQUVzY5THXsBS+REDmFoTag5XQYYs76iP\nS7ukvTN5hNwGuh2u4I8UeBatWe1oYV9RdnL1jIJ70AkqD5ow+fhWgmi9ZOp/6TsG\nwTyGxMf/AgMBAAECggEAYR/F5AnQ8fM8V9MDTMqoX0K77WB9mPvv/az1xXAsQLm9\nmtXQ2s95qwKYP+csZUZGZkR3s1NVkinNgwXdBgSkuGfF6MfpQ9pf1vowCwT2Urvy\nyGbmjb3R3CsrDMZ3BUOe+sDQDWtxqrDkxkFTarfDLq5TRf6c6jilDanFumRt3AVK\n4MEdQ3d19jU+1IcSp9ocbDtcfTSSRZY6jUtCwgEERywCPT3tC7NFptKIFi5WcLc8\nYsXbupfX7Mx/yF+9/2K5bSQtoKjRNqlRPyBek5ccpUgGMqIPCOPVZZLuRY+o549B\nsZl89ZG/v7U3JdnTWaB5Yc3dlEIGKmqs5hyfHpvp0QKBgQD/hDgenz0ESdKYQ+zT\nQnk/+KrVqg3eOfE355KYRIykio50HIVzddqnyAqIjzQszjvhF+ErUu80qGjkTx8n\ngULtrPofmz/EixtRL0lRKYQEWbpPK0PGkwcCU7QKc51BuB5Hj5bie3E+X2q+ECoj\nlXyQIxS1fTJhA0V5jfq7X+94bwKBgQDdA8H8CYtyPGTfJA43lLiOSYs2i6RAfl28\nSQwwePu9RUQjH4A37SOY+0/lH2HKzVpPndHMSa/hZ2bZbhFZwNubU2xj5FS/Q3PE\n8irZRsdaWrxmP7pf3bKN7Mgl5aOTg7kDmeci3JbjFygyafjCItApVc0gBqt4CTXr\nuPyvMiLRcQKBgHmKpT87s8SEcR5owRBEwHRDjs+P0oTwvuM+ziaMBPKHzfdBUeF4\nIAhLSWdn5wOhHi6WM09uZcaAjVR8pm8eN33jGB9Ms+qD2PynJ5Lp0phXLh5WkCi2\n61CaDDwkfpsyP4T+smENIvLuZFIAUmsWwme1qDYkVYB8E+IcPTZADiMVAoGBAKqf\nFgiezbpZCX6CdT9PXtLpz8FCOIFZjL+onPJm0+EgMiPzU6bZOZwGl31IptRLiCbi\nrW5KjK80hl/g6yAhFOhqlMjhItOtHRiz44RtccU9OyislhMgMZIDc9hd2dQt4oz3\nKUruhMW3wN56lQI6ofznMj5BJ+q5IZli7B/MUrjhAoGAa338R1+AUccXH4s8E8KN\ncOlMw6g7Nq7rYaZj3+10dBvvTv++SlB7/TYaHD6WjFfNbe7TVhcYgCM3phycPo+9\n57zmnTQ+UJ8IObVByaMphpAqsHuKPr7k1dKi22FHOK9HhqB13syIVxe7UecmCTx4\npLvy6dHSkby0e6Db58+6Q9o=\n-----END PRIVATE KEY-----\n",
-            "client_email": "firebase-adminsdk-fbsvc@imsolutions-e8ddd.iam.gserviceaccount.com",
-            "client_id": "113917165170149522619",
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40imsolutions-e8ddd.iam.gserviceaccount.com",
-            "universe_domain": "googleapis.com"
-        }
-        
-        try:
-            # Load credentials from the embedded dictionary
-            cred = fb_credentials.Certificate(firebase_credentials)
-            
-            # Set the database URL explicitly
-            rtdb_url = "https://imsolutions-e8ddd-default-rtdb.firebaseio.com/"
-            
+        cred = None
+        # Prefer base64-encoded JSON first
+        fb_cred_json_b64 = os.getenv('FIREBASE_CREDENTIALS_JSON_B64')
+        if fb_cred_json_b64:
+            try:
+                decoded = base64.b64decode(fb_cred_json_b64).decode('utf-8')
+                firebase_credentials = json.loads(decoded)
+                cred = fb_credentials.Certificate(firebase_credentials)
+            except Exception as e:
+                logger.error(f"Failed to parse FIREBASE_CREDENTIALS_JSON_B64: {e}")
+                cred = None
+
+        # Next, prefer credentials from plain JSON env var to avoid storing files
+        if cred is None:
+            fb_cred_json = os.getenv('FIREBASE_CREDENTIALS_JSON')
+            try:
+                if fb_cred_json:
+                    firebase_credentials = json.loads(fb_cred_json)
+                    cred = fb_credentials.Certificate(firebase_credentials)
+            except Exception as e:
+                logger.error(f"Failed to parse FIREBASE_CREDENTIALS_JSON: {e}")
+                cred = None
+
+        # Fallback to credentials file path if provided
+        if cred is None:
+            cred_file_path = os.getenv('FIREBASE_CREDENTIALS_FILE')
+            if cred_file_path and os.path.exists(cred_file_path):
+                try:
+                    cred = fb_credentials.Certificate(cred_file_path)
+                except Exception as e:
+                    logger.error(f"Failed to load Firebase credentials from file: {e}")
+                    cred = None
+
+        if cred is not None:
+            # Set the database URL explicitly (allow override via env)
+            rtdb_url = os.getenv('FIREBASE_DATABASE_URL', 'https://imsolutions-e8ddd-default-rtdb.firebaseio.com/')
+
             # Initialize Firebase with explicit credentials and database URL
             firebase_admin.initialize_app(cred, {
                 'databaseURL': rtdb_url
             })
-            
+
             logger.info(f"Firebase initialized successfully with database: {rtdb_url}")
             rtdb_available = True
-            
-        except Exception as e:
-            logger.error(f"Failed to initialize Firebase with credentials: {e}")
+        else:
+            logger.warning('Firebase credentials not provided. RTDB features will be disabled.')
             rtdb_available = False
             
     else:
@@ -91,19 +106,31 @@ except Exception as e:
 
 # Google Sheets setup
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-SPREADSHEET_ID = '1KzT0Idmu420OWlLiH6cKcxLZv_zjIbmNq6HjXohKGp4'  # Your Google Sheet ID
+SPREADSHEET_ID = os.getenv('GOOGLE_SHEETS_SPREADSHEET_ID', '')
 RANGE_NAME = 'Calls!A:E'  # Sheet name and range
 
  # Configure Gemini
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyAIAqbokZhxpbstxZ8ZUOG1WGrVHrjK8_k')
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.0-flash')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-2.0-flash')
+else:
+    logger.warning('GEMINI_API_KEY not set. Chat responses will be disabled until provided.')
+    model = None
 
 # Configure Twilio
-TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', 'AC98028fc853ea846cf8926582807b9e49')
-TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', 'f262ad9c47a78436a1f90462e61c15bc')
-TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER', '+13154440346')
-twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
+twilio_client = None
+if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+    try:
+        twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    except Exception as e:
+        logger.error(f"Failed to initialize Twilio client: {e}")
+        twilio_client = None
+else:
+    logger.warning('Twilio credentials not set. Voice call features will be disabled until provided.')
 
 # Store appointments in memory (in production, use a database)
 appointments = []
@@ -147,8 +174,20 @@ def get_google_sheets_service():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+            # Prefer base64 client config, then plain JSON, then file path
+            client_config_b64 = os.getenv('GOOGLE_OAUTH_CLIENT_SECRETS_JSON_B64')
+            if client_config_b64:
+                decoded = base64.b64decode(client_config_b64).decode('utf-8')
+                client_config = json.loads(decoded)
+                flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+            else:
+                client_config_json = os.getenv('GOOGLE_OAUTH_CLIENT_SECRETS_JSON')
+                if client_config_json:
+                    client_config = json.loads(client_config_json)
+                    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+                else:
+                    client_secrets_path = os.getenv('GOOGLE_OAUTH_CLIENT_SECRETS_FILE', 'credentials.json')
+                    flow = InstalledAppFlow.from_client_secrets_file(client_secrets_path, SCOPES)
             creds = flow.run_local_server(port=0)
         with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
@@ -603,12 +642,20 @@ def initiate_call():
         logger.info(f"Attempting to initiate call to {to_number} from {TWILIO_PHONE_NUMBER}")
         logger.info(f"Using Twilio credentials - Account SID: {TWILIO_ACCOUNT_SID[:5]}...")
         
+        # Ensure Twilio is configured
+        if not twilio_client or not TWILIO_PHONE_NUMBER:
+            return jsonify({'success': False, 'message': 'Voice call is not configured. Set TWILIO_* env vars.'}), 503
+
+        public_base_url = os.getenv('PUBLIC_BASE_URL', '').rstrip('/')
+        if not public_base_url:
+            return jsonify({'success': False, 'message': 'PUBLIC_BASE_URL not set for Twilio webhooks.'}), 503
+
         # Make the call using Twilio
         call = twilio_client.calls.create(
             to=to_number,
             from_=TWILIO_PHONE_NUMBER,
-            url='https://437f-14-195-161-134.ngrok-free.app/voice',  # Updated ngrok URL
-            status_callback='https://437f-14-195-161-134.ngrok-free.app/call-completed',  # Updated ngrok URL
+            url=f'{public_base_url}/voice',
+            status_callback=f'{public_base_url}/call-completed',
             status_callback_event=['completed'],
             status_callback_method='POST'
         )

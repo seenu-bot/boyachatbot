@@ -1001,7 +1001,7 @@
                                             <td>{{ lead.email }}</td>
                                             <td>{{ lead.phone if lead.phone else 'N/A' }}</td>
                                             <td>{{ lead.message[:50] + '...' if lead.message and lead.message|length > 50 else (lead.message or 'N/A') }}</td>
-                                            <td>{{ lead.timestamp[:10] if lead.timestamp else 'N/A' }}</td>
+                                            <td>{{ lead.created_at[:10] if lead.created_at else 'N/A' }}</td>
                                             <td><span class="status-success">New</span></td>
                                         </tr>
                                     {% endfor %}

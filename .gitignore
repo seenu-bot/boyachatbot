@@ -42,3 +42,41 @@ appointments/
 # Keep the appointments.csv file
 !appointments.csv 
 .vercel
+ 
+# Credentials and secrets
+credentials.json
+imsolutions-e8ddd-firebase-adminsdk-*.json
+*serviceaccount*.json
+*.pem
+*.p12
+token.pickle
+
+
+
+# env files
+.env
+**/.env
+*/.env.
+
+# credentials and keys
+service-account.json
+firebase-adminsdk.json
+credentials.json
+*.pem
+*.p12
+*.key
+*.crt
+
+# tokens
+token.pickle
+*.pickle
+
+# local data
+users_data.json
+appointments.csv
+appointments/*.ics
+
+# misc
+.DS_Store
+Thumbs.db
+.vercel
